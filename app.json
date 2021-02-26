@@ -1,0 +1,12 @@
+{
+  "name": "testing-scanner",
+  "displayName": "testing-scanner",
+  "expo": {
+    "name": "testing-scanner",
+    "slug": "testing-scanner",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
