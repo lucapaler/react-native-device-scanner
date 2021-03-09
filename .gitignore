@@ -77,7 +77,6 @@ jarjar-rules.txt
 .kernel-ngrok-url
 
 # Template files
-/android/app/src/main/AndroidManifest.xml
 /android/app/google-services.json
 /android/expoview/src/main/java/host/exp/exponent/generated/ExponentKeys.java
 /apps/bare-expo/android/app/google-services.json
