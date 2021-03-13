@@ -138,8 +138,12 @@ export default function App() {
     zeroconf.on('resolved', (service) => {
       const ip = service.addresses[0];
 
+      console.log('[zeroconf] found', ip);
+
       if (!Object.keys(devices).includes(ip)) {
         const ipv6 = service.addresses.find((addr) => addr.includes('fe80::'));
+
+        console.log('[zeroconf] link-local ipv6', ipv6);
 
         const newDevices = { ...devices };
 
@@ -148,7 +152,11 @@ export default function App() {
         const mac = service.txt.mac || service.txt.mac_address || existingInfo.mac;
         const possibleMac = (ipv6 ? ipv62mac(ipv6) : '') || existingInfo.possibleMac;
 
+        console.log('[zeroconf] mac', mac);
+        console.log('[zeroconf] possible mac', possibleMac);
+
         if (!service.txt.usb_MFG && !service.txt.vendor && !existingInfo.manufacturer) {
+          console.log('[zeroconf] fetching mac vendor');
           fetchMacVendor(mac)
             .then((manufacturer) => {
               if (!manufacturer) {
@@ -165,6 +173,8 @@ export default function App() {
                       id: ip,
                     };
 
+                    console.log('[zeroconf] resolved', JSON.stringify(newDevices[ip], null, 2));
+
                     setDevices(newDevices);
                     devicesBackup.current = newDevices;
                   });
@@ -180,6 +190,8 @@ export default function App() {
                   id: ip,
                 };
 
+                console.log('[zeroconf] resolved', JSON.stringify(newDevices[ip], null, 2));
+
                 setDevices(newDevices);
               }
             });
@@ -194,6 +206,8 @@ export default function App() {
             txt: JSON.stringify(service.txt) || existingInfo.txt,
             id: ip,
           };
+
+          console.log('[zeroconf] resolved', JSON.stringify(newDevices[ip], null, 2));
 
           setDevices(newDevices);
         }
@@ -436,6 +450,8 @@ export default function App() {
 
       const uuid = device.id;
 
+      console.log('[bluetooth] found', uuid);
+
       const existingInfo = newDevices[uuid] || {};
 
       newDevices[uuid] = {
@@ -448,6 +464,8 @@ export default function App() {
         discovery: 'Bluetooth',
         txt: device.manufacturerData ? base64.decode(device.manufacturerData) : '',
       };
+
+      console.log('[bluetooth] resolved', JSON.stringify(newDevices[uuid], null, 2));
     });
 
     await new Promise((resolve) => setTimeout(resolve, 6000));
@@ -485,6 +503,8 @@ export default function App() {
 
     if (matches && matches.length > 0) {
       const link = matches[0];
+
+      console.log('[upnp]', ip, 'manifest at', link);
 
       try {
         const response = await fetch(link, { method: 'GET' });
@@ -555,10 +575,14 @@ export default function App() {
       if (!queue.includes(address)) {
         queue.push(address);
 
+        console.log('[upnp] found', address);
+
         if (msg && !(newDevices[address] && newDevices[address].discovery.includes('UPnP - '))) {
           parseUPnPDevice(newDevices, msg, address)
             .then((parsed) => {
               newDevices[address] = parsed;
+
+              console.log('[upnp] resolved', JSON.stringify(parsed, null, 2));
             })
             .catch((error) => {
               Alert.alert('UPnP Error', error.message);
