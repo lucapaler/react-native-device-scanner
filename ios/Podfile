@@ -21,4 +21,6 @@ target 'testingscanner' do
   #  post_install do |installer|
   #    flipper_post_install(installer)
   #  end
+  pod 'react-native-custom-module', :path => '../node_modules/get-subnet-mask'
+
 end

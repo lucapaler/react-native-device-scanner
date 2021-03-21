@@ -4,16 +4,13 @@ import {
   Alert,
 } from 'react-native';
 
-import { NetworkInfo } from 'react-native-network-info';
-import sip from 'shift8-ip-func';
-import ipaddr from 'ipaddr.js';
-import net from 'react-native-tcp';
+import { ScanPorts, ScanIps } from './src/lib/portScanner'
+// import net from 'react-native-tcp';
 import Zeroconf from 'react-native-zeroconf';
 import { BleManager } from 'react-native-ble-plx';
 import base64 from 'react-native-base64';
 import dgram from 'react-native-udp';
 import XMLParser from 'react-xml-parser';
-import Ping from 'react-native-ping';
 import * as Sentry from '@sentry/react-native';
 
 import cids from './companyIdentifiers';
@@ -29,7 +26,8 @@ export default function App() {
   const [isLoading, load] = useState(false);
   const [isDataVisible, showData] = useState([]);
   const bleManager = useRef(new BleManager());
-
+  const [ActiveIp, setActiveIp] = useState([])
+  const [portStatus, setPortStatus] = useState({})
   const zeroconf = new Zeroconf();
   const xmlParser = new XMLParser();
 
@@ -47,6 +45,10 @@ export default function App() {
       bleManager.current.destroy();
     };
   }, []);
+
+  useEffect(()=> {
+    console.log(portStatus)
+  },[portStatus])
 
   /**
    * Converts IPv6 link-local address to MAC address.
@@ -220,191 +222,6 @@ export default function App() {
   }, [devices]);
 
   /**
-   * TCP port scans all IPs on network.
-   *
-   * Calculates range of IP addresses based on network info. The uncommented code loops through
-   * each IP address and pings it in order to build a list of active, online, healthy device IPs.
-   * The commented code loops through each IP address and the specified port range and attempts to
-   * find open ports for each device.
-   *
-   * @see  scanHost
-   * @link https://github.com/pusherman/react-native-network-info
-   * @link https://www.shift8web.ca/2019/03/how-to-build-a-port-scanner-with-javascript-using-react-native
-   * @link https://github.com/stardothosting/shift8-ip-func
-   * @link https://github.com/whitequark/ipaddr.js
-   * @link https://github.com/RoJoHub/react-native-ping
-   */
-  const manualScan = () => {
-    const portRange = [80, 21, 22, 25, 443, 3389];
-    const output = [];
-
-    NetworkInfo.getIPAddress().then((ip) => {
-      const localIp = ip;
-
-      return NetworkInfo.getBroadcast().then((address) => {
-        const localBroadcast = address;
-
-        return NetworkInfo.getSubnet().then((sb) => {
-          const localNetmask = sb;
-          const subconv = ipaddr.IPv4.parse(localNetmask).prefixLengthFromSubnetMask();
-          const firstHost = ipaddr.IPv4.networkAddressFromCIDR(`${localIp}/${subconv}`);
-          const lastHost = ipaddr.IPv4.broadcastAddressFromCIDR(`${localIp}/${subconv}`);
-          const firstHostHex = sip.convertIPtoHex(firstHost);
-          const lastHostHex = sip.convertIPtoHex(lastHost);
-          let ipRange = sip.getIPRange(firstHostHex, lastHostHex);
-          ipRange = ipRange.slice(1);
-
-          return {
-            local_ip: localIp,
-            local_broadcast: localBroadcast,
-            local_netmask: localNetmask,
-            subnet_conv: subconv,
-            first_host: firstHost,
-            last_host: lastHost,
-            first_host_hex: firstHostHex,
-            last_host_hex: lastHostHex,
-            ip_range: ipRange,
-          };
-        });
-      });
-    }).then(async (response) => {
-      for (let i = 0; i < response.ip_range.length; i += 1) {
-        // eslint-disable-next-line no-await-in-loop
-        await Ping.start(response.ip_range[i], { timeout: 250 })
-          .then(() => {
-            output.push(response.ip_range[i]);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      }
-
-      // Promise.all(response['ip_range']
-      //   .map((ip) => Promise.all(portRange
-      //     .map((port) => scanHost(ip, port)
-      //       .then((response) => {
-      //         output.push(response);
-      //       })
-      //       .catch((err) => {
-      //         console.error(err);
-      //         return err;
-      //       })))))
-      //   .then(() => {
-      //     console.log('OUTPUT', output);
-      //   });
-
-      // for (let i = 0; i < response['ip_range'].length; i++) {
-      //   for (let j = 0; j < portRange.length; j++) {
-      //     scanHost(response['ip_range'][i], portRange[j]).then((response) => {
-      //       console.log('RESPONSE', response);
-      //       output.push(response);
-      //     })
-      //       .catch((err) => {
-      //         console.error(err);
-      //         return err;
-      //       })
-      //   }
-      // }
-    }).catch((err) => {
-      console.error(err);
-      return err;
-    });
-  };
-
-  /**
-   * Banner grabs TCP host.
-   *
-   * Creates connection to presumably previously tested and open port on specified IP address.
-   * Writes basic GET request in order to return 404 information which sometimes contains target
-   * OS, manufacturer, model, etc.
-   *
-   * @link https://www.shift8web.ca/2019/03/how-to-build-a-port-scanner-with-javascript-using-react-native
-   * @link https://github.com/aprock/react-native-tcp
-   *
-   * @param {string} host IP address of host to connect to.
-   * @param {number} port TCP port to connect to.
-   */
-  const scanTCPHost = (host, port) => {
-    const client = net.createConnection(port, host);
-    console.log('Socket created.');
-    client.on('data', (data) => {
-      // Log the response from the HTTP server.
-      console.log(`RESPONSE: ${data}`);
-    }).on('connect', () => {
-      // Manually write an HTTP request.
-      client.write('GET / HTTP/1.0\r\n\r\n');
-      console.log(`CONNECTED : ${host} ${port}`);
-    }).on('end', () => {
-      console.log('DONE');
-      client.close();
-    });
-  };
-
-  /**
-   * Attempts to connect to device.
-   *
-   * Tries to open TCP connection to specified host and port, logs relevant debug information and
-   * returns back the specified IP and port if a successful connection was made. Has manual timeout
-   * of 5 seconds if socket is not closed before then.
-   *
-   * @link https://www.shift8web.ca/2019/03/how-to-build-a-port-scanner-with-javascript-using-react-native
-   * @link https://github.com/aprock/react-native-tcp
-   *
-   * @param {string} hostIP   IP address of host to attempt to connect to.
-   * @param {number} hostPort Port to attempt to connect to.
-   *
-   * @returns {Promise} Promise that resolves to map of specified IP and port or rejects with
-   *                    error.
-   */
-  const scanHost = (hostIP, hostPort) => new Promise((resolve) => {
-    const client = net.connect({
-      host: hostIP,
-      port: hostPort,
-    }, () => { // 'connect' listener
-      client.end('finished');
-
-      const scanResult = {
-        ip: hostIP,
-        port: hostPort,
-      };
-
-      resolve(scanResult);
-    });
-
-    client.on('timeout', () => {
-      console.log('Socket timed out !');
-      client.end('Timed out!');
-    });
-
-    client.on('end', (data) => {
-      console.log('Socket ended from other end!');
-      console.log(`End data : ${data}`);
-    });
-
-    client.on('close', (error) => {
-      const bread = client.bytesRead;
-      const bwrite = client.bytesWritten;
-      console.log(`Bytes read : ${bread}`);
-      console.log(`Bytes written : ${bwrite}`);
-      console.log('Socket closed!');
-      if (error) {
-        console.log('Socket was closed as a result of transmission error');
-      }
-    });
-
-    client.on('error', (err) => {
-      console.log(`******* ERROR : ${JSON.stringify(err)}`);
-      client.destroy();
-    });
-
-    setTimeout(() => {
-      const isdestroyed = client.destroyed;
-      console.log(`Socket destroyed:${isdestroyed}`);
-      client.destroy();
-    }, 5000);
-  });
-
-  /**
    * Extracts company identifier.
    *
    * Decodes manufacturer data packet sent with Bluetooth device discoveries, takes the first two
@@ -559,19 +376,21 @@ export default function App() {
   const detectUPnPDevices = async () => {
     load(true);
 
-    const socket = dgram.createSocket('udp4');
+    const socket = dgram.createSocket({ type: 'udp4', debug: true })
     socket.bind(1900);
     socket.once('listening', () => {
+      console.log('[LISTENING]')
       socket.send('M-SEARCH * HTTP/1.1\r\nHOST:239.255.255.250:1900\r\nST: ssdp:all\r\nMX:2\r\nMAN:"ssdp:discover"\r\n\r\n', undefined, undefined, 1900, '239.255.255.250', (error) => {
         if (error) Alert.alert('UPnP Error', error.message);
       });
     });
 
     const newDevices = { ...devicesBackup.current };
-
+    console.log(newDevices)
     const queue = [];
 
     socket.on('message', (msg, { address }) => {
+      console.log(msg, address)
       if (!queue.includes(address)) {
         queue.push(address);
 
@@ -591,7 +410,7 @@ export default function App() {
       }
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 2500));
+    await new Promise((resolve) => setTimeout(resolve, 10000));
 
     setDevices(newDevices);
     devicesBackup.current = newDevices;
@@ -638,6 +457,16 @@ export default function App() {
       title: 'Bluetooth',
       func: detectBluetoothDevices,
     },
+    {
+      title: 'Manual Scan',
+      func: async () =>{ 
+          load(true); 
+          const res =  await ScanIps()
+          setActiveIp(res)
+          setPortStatus({})
+          load(false) 
+        }  ,
+    },
   ];
 
   return (
@@ -670,6 +499,19 @@ export default function App() {
         ))}
       </View>
       <ScrollView style={{ paddingHorizontal: 20 }}>
+        {
+          ActiveIp.map((ip, idx) => (
+            <TouchableOpacity key={idx}
+        style={{marginBottom:'1%', padding: '2%', backgroundColor: 'yellow'}}
+        onPress={async () => { const res = await ScanPorts(ip); setPortStatus({...portStatus,[`${ip}`]:res})} }
+      >
+          <View key={idx} >
+              <Text>{ip}</Text>
+              <Text>{`${JSON.stringify(portStatus?.[`${ip}`])}`}</Text>
+            </View>
+            </TouchableOpacity>)
+          )
+        }
         {Object.values(devices).map(({
           name = '', model = '', id = '', manufacturer = '', mac = '', discovery = '', txt = '',
           possibleMac = '', error = '',
