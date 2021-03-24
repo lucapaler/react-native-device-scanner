@@ -133,10 +133,15 @@ export default function App() {
    * @see setDevices
    *
    * @listens resolved
+   * @listens found
    *
    * @returns {function} Removes all Zeroconf listeners in cleanup.
    */
   useEffect(() => {
+    zeroconf.on('found', (service) => {
+      console.log('[zeroconf] found available service for scanning', `${service}._tcp.local.`);
+    });
+
     zeroconf.on('resolved', (service) => {
       const ip = service.addresses[0];
 
@@ -552,7 +557,7 @@ export default function App() {
           );
         })}
       </ScrollView>
-      <Text style={{ textAlign: 'center', fontSize: 12, color: 'gray' }}>Version 0.0.13</Text>
+      <Text style={{ textAlign: 'center', fontSize: 12, color: 'gray' }}>Version 0.0.14</Text>
     </SafeAreaView>
   );
 }
