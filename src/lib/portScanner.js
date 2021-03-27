@@ -51,16 +51,16 @@ const networkPromise = () => new Promise(async function (resolve, reject) {
   });
 
 
-const ping = (range) => new Promise(async (resolve) => {
-    let active_ips = []
-    for (const ip of range) {
-        try {
-            const status = await Ping.start(ip, { timeout: 100 })
-            active_ips.push(ip)
-        } catch (error) { }
-    }
-    resolve(active_ips)
-})
+// const ping = (range) => new Promise(async (resolve) => {
+//     let active_ips = []
+//     for (const ip of range) {
+//         try {
+//             const status = await Ping.start(ip, { timeout: 100 })
+//             active_ips.push(ip)
+//         } catch (error) { }
+//     }
+//     resolve(active_ips)
+// })
 
 const portScanner = (ip) => new Promise (async (resolve) => {
     let port_status = []
@@ -82,25 +82,47 @@ const portScanner = (ip) => new Promise (async (resolve) => {
     resolve(port_status)
 })
 
+// export const ScanIps = () => new Promise (async (resolve) => {
+//     try {
+
+//         const response = await networkPromise()
+//         const active_ips = await ping(response['ipRange'])
+//         console.log(active_ips)
+//         resolve(active_ips)
+//         // for(const ip of active_ips){
+//         //     const port_status = await portScanner(ip)
+//         //     return port_status
+//         //     console.log('######')
+//         //     console.log(port_status)
+//         //     console.log('######')
+//         // }
+//     } catch (error) {
+//         console.log('[PORT SCANNER ERROR]', error)
+//     }
+// })
 
 
-export const ScanIps = () => new Promise (async (resolve) => {
+
+export const ScanIps = async (dispatch, actions, timeout) => {
     try {
+
+        // Dispatching an action for Initiating ZeroConf Scan
+        dispatch(actions.setStartDiscoveryTime('ipScan'))
+
         const response = await networkPromise()
-        const active_ips = await ping(response['ipRange']) 
-        // console.log(active_ips)
-        resolve(active_ips)
-        // for(const ip of active_ips){
-        //     const port_status = await portScanner(ip)
-        //     return port_status
-        //     console.log('######')
-        //     console.log(port_status)
-        //     console.log('######')
-        // }
+        for (const ip of response['ipRange']) {
+            try {
+                const status = await Ping.start(ip, { timeout })
+                dispatch(actions.deviceDiscovered({ip, protocol: 'IP-Scan', timeStamp: Date.now() }))
+            } catch (error) { }
+        } 
+
+        dispatch(actions.setEndDiscoveryTime('ipScan'))
+
     } catch (error) {
         console.log('[PORT SCANNER ERROR]', error)
     }
-})
+}
 
 export const ScanPorts = (ip) => new Promise(async (resolve) => {
     try {
