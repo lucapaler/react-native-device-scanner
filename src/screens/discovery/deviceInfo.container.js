@@ -87,7 +87,7 @@ const DeviceDetails = ({ navigation, route }) => {
                 </View>
             </ScrollView>
             <Layout level="3" style={{ padding: '3%' }}>
-                <Button onPress={() => navigation.navigate('UpdateJob', { job: job })} >Port Scan</Button>
+                <Button disabled >Port Scan</Button>
             </Layout>
         </View>
     );

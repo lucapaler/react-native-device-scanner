@@ -22,8 +22,7 @@ export const discoveryReducer = createReducer(initialState, {
             last: {
                     execution: Date.now(),
                     time: {
-                        start: {
-                        },
+                        start: {},
                         end: {}
                     },
                     discovered: [],
