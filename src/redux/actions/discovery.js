@@ -28,6 +28,13 @@ export function deviceDiscovered(info) {
   }
 }
 
+export function zserviceDiscovered(info) {
+  return {
+    type: types.ZSERVICE_DISCOVERED,
+    info,
+  };
+}
+
 export function setStartDiscoveryTime(protocol) {
   return {
     type: types.SET_START_DISCOVERY_TIME,

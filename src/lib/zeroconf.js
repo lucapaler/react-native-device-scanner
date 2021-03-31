@@ -1,6 +1,6 @@
 import Zeroconf from 'react-native-zeroconf';
-import { fetchMacVendor, ipv62mac } from './helpers'
 
+import { fetchMacVendor, ipv62mac } from './helpers'
 
 /**
  * Scans for Zeroconf devices.
@@ -11,15 +11,37 @@ import { fetchMacVendor, ipv62mac } from './helpers'
  * @link https://github.com/balthazar/react-native-zeroconf
  */
 
-const protocols = ['airplay', 'ipp', 'companion-link', 'http', 'hap', 'alexa', 'ssh'];
 const zeroconf = new Zeroconf();
 
-export const zeroConfScan = async (dispatch, actions) => {
+export const zservicesScan = async (dispatch, actions) => {
+    zeroconf.on('found', async (service) => {
+        // scannable services do not contain addresses, only discovered devices do
+        if (!service.addresses) {
+            console.log(
+                '[zeroconf] found available service for scanning', `${service}._tcp.local.`,
+            );
 
-    zeroconf.on('found', (service) => {
-        console.log('[zeroconf] found available service for scanning', `${service}._tcp.local.`);
+            dispatch(actions.zserviceDiscovered(service.slice(1)));
+        }
     });
 
+    const scanServices = async () => {
+        zeroconf.scan('services', 'dns-sd._udp', 'local');
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        zeroconf.stop();
+        zeroconf.removeAllListeners();
+    };
+
+    try {
+        await scanServices();
+    } catch (error) {
+        console.log('[zservices] ERROR', error.message);
+    }
+}
+
+export const zeroConfScan = async (dispatch, actions, zservices) => {
     zeroconf.on('resolved', async (service) => {
         const ip = service?.addresses[0];
         console.log('[zeroconf] FOUND', ip);
@@ -66,29 +88,26 @@ export const zeroConfScan = async (dispatch, actions) => {
     });
 
     const scanDevices = async () => {
-
         // Dispatching an action for Initiating ZeroConf Scan
         dispatch(actions.setStartDiscoveryTime('zeroconf'))
-        // zeroconf.scan('services', 'dns-sd._udp', 'local');
 
-        for (let i = 0; i < protocols.length; i += 1) {
-            zeroconf.scan(protocols[i], 'tcp', ''); // empty domain selects default
+        for (let i = 0; i < zservices.length; i += 1) {
+            zeroconf.scan(zservices[i], 'tcp', ''); // empty domain selects default
 
             // eslint-disable-next-line no-await-in-loop
-            await new Promise((resolve) => setTimeout(resolve, 2500));
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
-            // Dispatcing an action for Ending ZeroConf Scan
+            // Dispatching an action for Ending ZeroConf Scan
             zeroconf.stop();
         }
 
         dispatch(actions.setEndDiscoveryTime('zeroconf'))
         zeroconf.removeAllListeners();
-
     };
 
     try {
         await scanDevices()
     } catch (error) {
-        console.log('[] ERROR', error.message)
+        console.log('[zeroconf] ERROR', error.message)
     }
 }

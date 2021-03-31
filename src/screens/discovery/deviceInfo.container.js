@@ -44,7 +44,7 @@ const DeviceDetails = ({ navigation, route }) => {
                         </Row>
                         {
                             deviceInfo?.protocol?.map((item, idx) => (
-                                <Row>
+                                <Row key={moment(deviceInfo?.timeStamp[idx]).unix()}>
                                     <Md>
                                         <Text category="s1" appearance="hint">{item}</Text>
                                     </Md>

@@ -1,8 +1,9 @@
-import { call, put, fork } from 'redux-saga/effects';
+import { call, put, fork, select } from 'redux-saga/effects';
 import { detectUPnPDevices } from '../../../lib/upnp'
-import { zeroConfScan } from '../../../lib/zeroconf'
+import { zservicesScan, zeroConfScan } from '../../../lib/zeroconf';
 import { ScanIps } from '../../../lib/portScanner'
 import * as actions from '../../actions/discovery'
+import { getZServices } from './selectors';
 // import configureStore from '../../store';
 // const { store } = configureStore()
 
@@ -14,8 +15,12 @@ function* upnpScan(action) {
     yield call(detectUPnPDevices, action.dispatch, actions)
 } 
 
-function* zconfScan(action){
-    yield call(zeroConfScan, action.dispatch, actions)
+function* zconfScan(action) {
+    yield call(zservicesScan, action.dispatch, actions);
+
+    const zservices = yield select(getZServices);
+
+    yield call(zeroConfScan, action.dispatch, actions, zservices);
 }
 
 function* runTasks(action){

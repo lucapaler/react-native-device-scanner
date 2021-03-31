@@ -1,6 +1,6 @@
 import createReducer from '../../lib/createReducer';
 import * as types from '../types/discovery';
-import * as _ from 'lodash'
+import _ from 'lodash';
 
 /* App Reducer
  * handles state in the App Container
@@ -26,6 +26,7 @@ export const discoveryReducer = createReducer(initialState, {
                         end: {}
                     },
                     discovered: [],
+                    zservices: [],
                     error: {},
                     termination: null
             }
@@ -47,6 +48,13 @@ export const discoveryReducer = createReducer(initialState, {
         let newState = { ...state }
         newState.last.discovered.push(action.info)
         return newState
+    },
+    [types.ZSERVICE_DISCOVERED](state, action) {
+        let newState = { ...state };
+
+        newState.last.zservices.push(action.info);
+
+        return newState;
     },
     [types.ERROR_DISCOVERY](state, action) {
         return {...state, last: {...state.last, error: { ... state.last.error, [action.protocol]: action.error?.message}}}
