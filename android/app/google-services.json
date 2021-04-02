@@ -1,0 +1,109 @@
+{
+  "project_info": {
+    "project_number": "427074297383",
+    "firebase_url": "https://watutors-1.firebaseio.com",
+    "project_id": "watutors-1",
+    "storage_bucket": "watutors-1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427074297383:android:057b377295a1bbcfd77802",
+        "android_client_info": {
+          "package_name": "com.testingscanner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "427074297383-aurst61ugm3bgok2ocgfc3rh772fs7eb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBg-Pj2s8vHHtIedf61m_BTm5A_qLbwMS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "427074297383-aurst61ugm3bgok2ocgfc3rh772fs7eb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "427074297383-3kotccqp8eshjimnv0lfii01k6rmobuh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wavisits.watutors",
+                "app_store_id": "1505149502"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427074297383:android:82afc19a9fc805c9d77802",
+        "android_client_info": {
+          "package_name": "com.wavisits.watutor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "427074297383-4u6tt4jrsahleiushacfvqnt11kivs98.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wavisits.watutor",
+            "certificate_hash": "08380f10802737c4a2479409ddf2f87f5f0f5d54"
+          }
+        },
+        {
+          "client_id": "427074297383-j6o2djis1ec5i5g57j25sfbqe61r49aa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wavisits.watutor",
+            "certificate_hash": "76f06ce28e8e184c274498b74f20a4bfbb21f8d8"
+          }
+        },
+        {
+          "client_id": "427074297383-olaabbf1f7j880hkjhdv5gpvesdtf829.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wavisits.watutor",
+            "certificate_hash": "97def585168a9b54baaa0aad33ff1bbb1235d4f5"
+          }
+        },
+        {
+          "client_id": "427074297383-aurst61ugm3bgok2ocgfc3rh772fs7eb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBg-Pj2s8vHHtIedf61m_BTm5A_qLbwMS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "427074297383-aurst61ugm3bgok2ocgfc3rh772fs7eb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "427074297383-3kotccqp8eshjimnv0lfii01k6rmobuh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wavisits.watutors",
+                "app_store_id": "1505149502"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
