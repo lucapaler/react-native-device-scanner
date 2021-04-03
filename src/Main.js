@@ -9,6 +9,7 @@ import * as eva from '@eva-design/eva';
 import { ApplicationProvider, IconRegistry, useTheme } from '@ui-kitten/components';
 import { EvaIconsPack } from '@ui-kitten/eva-icons';
 import auth from '@react-native-firebase/auth';
+import messaging from '@react-native-firebase/messaging';
 import configureStore from './redux/store';
 import Navigator from './navigation';
 
@@ -25,6 +26,34 @@ export default function Entrypoint() {
             .then(() => {
                 console.log('User signed in anonymously');
             });
+
+        messaging().getToken()
+            .then((token) => {
+                apiFetch({
+                    method: 'POST',
+                    endpoint: 'scans/token',
+                    body: {
+                        id: '',
+                        token,
+                    },
+                });
+                // might want an error handler here
+            });
+
+        const unsubscribe = messaging().onTokenRefresh((token) => {
+            apiFetch({
+                method: 'POST',
+                endpoint: 'scans/token',
+                body: {
+                    id: '',
+                    token,
+                },
+            });
+        });
+
+        return () => {
+            unsubscribe();
+        };
     }, []);
 
     return (
