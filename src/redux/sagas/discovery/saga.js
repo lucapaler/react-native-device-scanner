@@ -5,8 +5,6 @@ import { ScanIps } from '../../../lib/portScanner'
 import { networkPromise } from '../../../lib/helpers'
 import { zservicesScan } from '../../../lib/zeroconf'
 import * as actions from '../../actions/discovery'
-// import configureStore from '../../store';
-// const { store } = configureStore()
 
 function* ipScanner(action){
     yield call(ScanIps, action.dispatch, actions, action.config.ipScan)
@@ -29,12 +27,8 @@ function* runTasks(action){
 
 export function* startDiscoveryAsync(action) {
     try {
-        console.log('START DISCOVERY', action)
         yield call(runTasks, action)
-        // yield call(detectUPnPDevices, action.dispatch, actions)
-        // yield call(zeroConfScan, action.dispatch, actions)
         yield put(actions.endDiscovery())
-        console.log('DONE')
     } catch (error) {
         console.log(error)
     }
@@ -55,7 +49,6 @@ export function* requestConfigAsync(action) {
             }
         }
         yield put(actions.setDiscoveryConfig(null, config))        
-        console.log('DONE')
     } catch (error) {
         console.log(error)
     }

@@ -35,8 +35,6 @@ const mergeData = (data) => new Promise((resolve) => {
         }
     };
 
-    // console.log(output)
-
     resolve(output)
 })
 
@@ -50,7 +48,6 @@ const Discovery = ({ navigation, route }) => {
     const [config, setConfig] = useState({})
     const [isDefaultConfig, setIsDefaultConfig] = useState(true)
     const [isBrowsingLogs, setIsBrowsingLogs] = useState(true)
-    // const [config, setConfig] = useState({})
 
     useEffect(() => {
             setScanInfo(Devices)
@@ -110,9 +107,8 @@ const Discovery = ({ navigation, route }) => {
             setIsDefaultConfig(true)
             setScanInfo({})
             setActive([])
+            fetchConfig()
         }
-
-        console.log('BROWSING LOGS')
 
     }, [isBrowsingLogs])
 
@@ -120,8 +116,6 @@ const Discovery = ({ navigation, route }) => {
         if (route.params?.config) {
             setConfig(Configuration)
         }
-        
-        console.log('ROUTE CONFIG')
 
     }, [route.params?.config])
 
@@ -136,8 +130,6 @@ const Discovery = ({ navigation, route }) => {
     }, [route.params?.scanInfo])
 
     const scan = () => dispatch(actions.startDiscovery(dispatch, Configuration))
-    // const scan = () => console.log('SCAN REQUEST')
-
 
     const LoadingIndicator = (props) => {
         return (
@@ -181,18 +173,19 @@ const Discovery = ({ navigation, route }) => {
                     <Row>
                         <Md end>
                             <CheckBox
-                                disabled={isBrowsingLogs}
+                                disabled={isBrowsingLogs || status}
                                 checked={isDefaultConfig}
                                 onChange={nextChecked => setIsDefaultConfig(nextChecked)}>
                                 Default Config
                     </CheckBox>
                         </Md>
                         <Md>
-                            <Button disabled={isDefaultConfig || isBrowsingLogs} size='small' onPress={() => navigation.navigate('Configure')} style={{ alignSelf: 'center' }} >CONFIGURE</Button>
+                            <Button disabled={isDefaultConfig || isBrowsingLogs || status} size='small' onPress={() => navigation.navigate('Configure')} style={{ alignSelf: 'center' }} >CONFIGURE</Button>
                         </Md>
                     </Row>
                     <View style={{ paddingVertical: '5%' }}>
                         <Button 
+                            disabled = {(!isDefaultConfig || status) && !Object.keys(config).length}
                             onPress={() => navigation.navigate('ConfigInfo', { config: config })} 
                             style={{ width: '80%', alignSelf: 'center' }} 
                         >
