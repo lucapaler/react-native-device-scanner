@@ -1,6 +1,6 @@
 import React from 'react'
 import { View } from 'react-native'
-import { Row, Md } from '../../shared/components/layout'
+import { Row, Md } from '../../shared/components/Layout'
 import { Text, Card } from '@ui-kitten/components'
 import Protocols from './Protocols'
 

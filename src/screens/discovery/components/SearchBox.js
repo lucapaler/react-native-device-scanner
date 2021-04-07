@@ -11,9 +11,7 @@ const SearchBox = (props) => {
     const { navigation, categoryId, screenName, ...other } = props
     return (
         <TouchableOpacity
-            // disabled={categoryId ? false : true}
             onPress={() => {
-               console.log(true)
                 navigation.navigate('ScanLogs', {
                 screenName: screenName,
             })}}

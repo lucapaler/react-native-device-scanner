@@ -4,4 +4,5 @@ import * as sagas from './saga'
 
 export const discoverySagas = [
     takeLatest(types.START_DISCOVERY, sagas.startDiscoveryAsync),
+    takeLatest(types.REQUEST_DISCOVERY_CONFIG, sagas.requestConfigAsync),
 ];

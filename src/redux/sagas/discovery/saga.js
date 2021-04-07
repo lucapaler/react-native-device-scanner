@@ -2,12 +2,14 @@ import { call, put, fork } from 'redux-saga/effects';
 import { detectUPnPDevices } from '../../../lib/upnp'
 import { zeroConfScan } from '../../../lib/zeroconf'
 import { ScanIps } from '../../../lib/portScanner'
+import { networkPromise } from '../../../lib/helpers'
+import { zservicesScan } from '../../../lib/zeroconf'
 import * as actions from '../../actions/discovery'
 // import configureStore from '../../store';
 // const { store } = configureStore()
 
 function* ipScanner(action){
-    yield call(ScanIps, action.dispatch, actions, 100)
+    yield call(ScanIps, action.dispatch, actions, action.config.ipScan)
 }
 
 function* upnpScan(action) {
@@ -15,7 +17,7 @@ function* upnpScan(action) {
 } 
 
 function* zconfScan(action){
-    yield call(zeroConfScan, action.dispatch, actions)
+    yield call(zeroConfScan, action.dispatch, actions, action.config.zeroConf)
 }
 
 function* runTasks(action){
@@ -27,11 +29,32 @@ function* runTasks(action){
 
 export function* startDiscoveryAsync(action) {
     try {
-        console.log('START DISCOVERY')
+        console.log('START DISCOVERY', action)
         yield call(runTasks, action)
         // yield call(detectUPnPDevices, action.dispatch, actions)
         // yield call(zeroConfScan, action.dispatch, actions)
         yield put(actions.endDiscovery())
+        console.log('DONE')
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+export function* requestConfigAsync(action) {
+    try {
+        const { values } = action
+        const ipScan = yield call(networkPromise, values?.ipScan)
+        const zeroConfServices = yield call(zservicesScan, values?.zeroConf)
+        const config = {
+            ipScan:{
+                ...ipScan,
+                timeout: values?.ipScan?.timeout || 100
+            },
+            zeroConf: {
+                services: values?.zeroConf?.services?.length? values.zeroConf.services : zeroConfServices
+            }
+        }
+        yield put(actions.setDiscoveryConfig(null, config))        
         console.log('DONE')
     } catch (error) {
         console.log(error)

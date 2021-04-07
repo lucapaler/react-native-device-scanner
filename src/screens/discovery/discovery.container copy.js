@@ -7,7 +7,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { DeviceInfoCard } from './components/DeviceInfo'
 import * as actions from '../../redux/actions/discovery'
 import ScanInfo from './components/ScanInfo';
-import moment from 'moment'
 import SearchBox from './components/SearchBox'
 
 const mergeData = (data) => new Promise((resolve) => {
@@ -43,29 +42,20 @@ const mergeData = (data) => new Promise((resolve) => {
 const Discovery = ({ navigation, route }) => {
     const dispatch = useDispatch()
     const Devices = useSelector(state => state.discoveryReducer?.last)
-    const Configuration = useSelector(state => state.discoveryReducer?.config)
     const [scanInfo, setScanInfo] = useState({})
     const status = useSelector(state => state.discoveryReducer?.scan)
     const [active, setActive] = useState([])
+    // const [config, setConfig] = useState({ ipScan: { timeout: 100 } })
+    const [defaultConfig, setDefaultConfig] = useState(true)
     const [config, setConfig] = useState({})
-    const [isDefaultConfig, setIsDefaultConfig] = useState(true)
-    const [isBrowsingLogs, setIsBrowsingLogs] = useState(true)
-    // const [config, setConfig] = useState({})
+
 
     useEffect(() => {
-            setScanInfo(Devices)
-        
+        setScanInfo(Devices)
     }, [Devices])
 
     useEffect(() => {
-        if(!status){
-            setIsBrowsingLogs(true)
-            setConfig(Devices.config)
-        }
-    }, [status])
-
-    useEffect(() => {
-        if (isDefaultConfig) {
+        if (defaultConfig) {
             fetchConfig()
         }
 
@@ -73,19 +63,7 @@ const Discovery = ({ navigation, route }) => {
             setConfig({})
         }
 
-    }, [isDefaultConfig])
-
-    useEffect(() => {
-        if (Configuration) {
-            setConfig(Configuration)
-        }
-
-
-        return () => {
-            setConfig({})
-        }
-
-    }, [Configuration])
+    }, [defaultConfig])
 
 
     useEffect(() => {
@@ -106,37 +84,19 @@ const Discovery = ({ navigation, route }) => {
     }, [scanInfo])
 
     useEffect(() => {
-        if(!isBrowsingLogs){
-            setIsDefaultConfig(true)
-            setScanInfo({})
-            setActive([])
-        }
 
-        console.log('BROWSING LOGS')
-
-    }, [isBrowsingLogs])
-
-    useEffect(() => {
-        if (route.params?.config) {
-            setConfig(Configuration)
-        }
-        
-        console.log('ROUTE CONFIG')
-
-    }, [route.params?.config])
-
-    useEffect(() => {
+        console.log(route.params)
 
         if (route.params?.scanInfo) {
-            setIsBrowsingLogs(true)
             setScanInfo(route.params.scanInfo)
-            setConfig(route.params.scanInfo.config)
         }
-        
-    }, [route.params?.scanInfo])
 
-    const scan = () => dispatch(actions.startDiscovery(dispatch, Configuration))
-    // const scan = () => console.log('SCAN REQUEST')
+        if (route.params?.config) {
+            setConfig(route.params.config)
+        }
+    }, [route.params])
+
+    const scan = () => dispatch(actions.startDiscovery(dispatch, config))
 
 
     const LoadingIndicator = (props) => {
@@ -151,7 +111,8 @@ const Discovery = ({ navigation, route }) => {
     };
 
     async function fetchConfig() {
-        dispatch(actions.requestDiscoveryConfig())
+        const response = await networkPromise()
+        setConfig({ ...config, ipScan: { ...response, timeout: 100 } })
     }
 
     return (
@@ -166,39 +127,23 @@ const Discovery = ({ navigation, route }) => {
                 }
                 ListHeaderComponent={<Layout level="2">
                     <View style={{ paddingVertical: '5%' }}>
-                        <Button 
-                            status={(status)? 'danger': 'primary'}
-                            disabled={isBrowsingLogs? false: (!isDefaultConfig && !Object.keys(config).length && !status)} 
-                            onPress={() =>  isBrowsingLogs? setIsBrowsingLogs(false) : (status)? dispatch(actions.endDiscovery()) : scan()} 
-                            style={{ width: '80%', alignSelf: 'center' }} 
-                            accessoryLeft={LoadingIndicator}>
-                                {isBrowsingLogs? `NEW SCAN`: (status)? `TERMINATE`: `INITIATE SCAN`}
-                        </Button>
+                        <Button disabled={Object.keys(config).length ? false : true} onPress={() => scan()} style={{ width: '80%', alignSelf: 'center' }} accessoryLeft={LoadingIndicator}>SCAN</Button>
                     </View>
                     <View style={{ padding: '5%' }}>
-                        <SearchBox value={isBrowsingLogs? moment(scanInfo?.execution).format('MMMM Do, h:mm:ss a'): null} label="" screenName="Discovery" navigation={navigation} route={route} />
+                        <SearchBox label="" screenName="Discovery" navigation={navigation} route={route} />
                     </View>
                     <Row>
                         <Md end>
                             <CheckBox
-                                disabled={isBrowsingLogs}
-                                checked={isDefaultConfig}
-                                onChange={nextChecked => setIsDefaultConfig(nextChecked)}>
+                                checked={defaultConfig}
+                                onChange={nextChecked => setDefaultConfig(nextChecked)}>
                                 Default Config
                     </CheckBox>
                         </Md>
                         <Md>
-                            <Button disabled={isDefaultConfig || isBrowsingLogs} size='small' onPress={() => navigation.navigate('Configure')} style={{ alignSelf: 'center' }} >CONFIGURE</Button>
+                            <Button disabled={defaultConfig} size='small' onPress={() => navigation.navigate('Configure')} style={{ alignSelf: 'center' }} >CONFIGURE</Button>
                         </Md>
                     </Row>
-                    <View style={{ paddingVertical: '5%' }}>
-                        <Button 
-                            onPress={() => navigation.navigate('ConfigInfo', { config: config })} 
-                            style={{ width: '80%', alignSelf: 'center' }} 
-                        >
-                            Check Configuration
-                        </Button>
-                    </View>
                     <ScanInfo totalDevices={active.length} info={scanInfo} />
                 </Layout>}
                 stickyHeaderIndices={[0]}

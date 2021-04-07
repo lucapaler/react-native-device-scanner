@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView } from 'react-native';
 import moment from 'moment'
 import { Layout, Text, Divider, Button, useTheme } from '@ui-kitten/components'
-import { Row, Column, Md } from '../shared/components/layout'
+import { Row, Column, Md } from '../shared/components/Layout'
 import Protocols from './components/Protocols'
 import { StyleSheet } from 'react-native';
 
@@ -44,7 +44,7 @@ const DeviceDetails = ({ navigation, route }) => {
                         </Row>
                         {
                             deviceInfo?.protocol?.map((item, idx) => (
-                                <Row>
+                                <Row key={idx}>
                                     <Md>
                                         <Text category="s1" appearance="hint">{item}</Text>
                                     </Md>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, TouchableOpacity } from 'react-native'
-import { Row, Column, Sm, Md, Lg, SmLabel, LgLabel, MdLabel } from '../shared/components/layout'
+import { View, FlatList, TouchableOpacity, ScrollView } from 'react-native'
+import { Row, Column, Sm, Md, Lg, SmLabel, LgLabel, MdLabel } from '../shared/components/Layout'
 import { useTheme, Layout, Text } from '@ui-kitten/components';
 import { useSelector } from 'react-redux';
 import moment from 'moment'

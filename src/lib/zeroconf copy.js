@@ -11,9 +11,10 @@ import { fetchMacVendor, ipv62mac } from './helpers'
  * @link https://github.com/balthazar/react-native-zeroconf
  */
 
+const protocols = ['airplay', 'ipp', 'companion-link', 'http', 'hap', 'alexa', 'ssh'];
 const zeroconf = new Zeroconf();
 
-export const zeroConfScan = async (dispatch, actions, config) => {
+export const zeroConfScan = async (dispatch, actions) => {
 
     zeroconf.on('found', (service) => {
         console.log('[zeroconf] found available service for scanning', `${service}._tcp.local.`);
@@ -70,11 +71,11 @@ export const zeroConfScan = async (dispatch, actions, config) => {
         dispatch(actions.setStartDiscoveryTime('zeroconf'))
         // zeroconf.scan('services', 'dns-sd._udp', 'local');
 
-        for (let i = 0; i < config?.services?.length; i += 1) {
-            zeroconf.scan(config?.services[i], 'tcp', ''); // empty domain selects default
+        for (let i = 0; i < protocols.length; i += 1) {
+            zeroconf.scan(protocols[i], 'tcp', ''); // empty domain selects default
 
             // eslint-disable-next-line no-await-in-loop
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 2500));
 
             // Dispatcing an action for Ending ZeroConf Scan
             zeroconf.stop();
@@ -91,32 +92,3 @@ export const zeroConfScan = async (dispatch, actions, config) => {
         console.log('[] ERROR', error.message)
     }
 }
-
-
-export const zservicesScan = () => new Promise(async (resolve) =>  {
-    zeroconf.on('found', async (service) => {
-        // scannable services do not contain addresses, only discovered devices do
-        if (!service.addresses) {
-            console.log(
-                '[zeroconf] found available service for scanning', `${service}._tcp.local.`,
-            );
-            resolve(service.slice(1));
-        }
-    });
-
-    const scanServices = async () => {
-        zeroconf.scan('services', 'dns-sd._udp', 'local');
-
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        zeroconf.stop();
-        zeroconf.removeAllListeners();
-        resolve([])
-    };
-
-    try {
-        await scanServices();
-    } catch (error) {
-        console.log('[zservices] ERROR', error.message);
-    }
-})

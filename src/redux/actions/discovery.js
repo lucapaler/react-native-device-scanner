@@ -1,9 +1,10 @@
 import * as types from '../types/discovery';
 
-export function startDiscovery(dispatch) {
+export function startDiscovery(dispatch, config) {
   return {
     type: types.START_DISCOVERY,
-    dispatch
+    dispatch,
+    config
   }
 }
 
@@ -40,5 +41,20 @@ export function setEndDiscoveryTime(protocol) {
   return {
     type: types.SET_END_DISCOVERY_TIME,
     protocol
+  }
+}
+
+export function setDiscoveryConfig(protocol, config) {
+  return {
+    type: types.SET_DISCOVERY_CONFIG,
+    protocol,
+    config
+  }
+}
+
+export function requestDiscoveryConfig(values) {
+  return {
+    type: types.REQUEST_DISCOVERY_CONFIG,
+    values
   }
 }

@@ -1,3 +1,9 @@
+import { NetworkInfo } from 'react-native-network-info';
+import sip from 'shift8-ip-func';
+import ipaddr from 'ipaddr.js';
+import NetInfo from "@react-native-community/netinfo";
+
+
 /**
  * Fetches MAC vendor information.
  *
@@ -70,3 +76,52 @@ export const ipv62mac = (ipv6) => {
 
     return macParts.join(':');
 };
+
+/**
+ * For fetching network information 
+ * @returns {Object} of network Info
+ */
+
+export const networkPromise = (values) => new Promise(async function (resolve, reject) {
+    try {
+
+      const net_info = await NetInfo.fetch()
+      console.log('NET_INFO', net_info)
+      const local_ip = values?.local_ip || net_info.details.ipAddress
+      console.log('IP', local_ip)
+      const local_broadcast = await NetworkInfo.getBroadcast()
+      console.log('BROADCAST', local_broadcast)
+      const local_netmask = values?.local_netmask || net_info.details.subnet
+      console.log('NETMASK', local_netmask)
+      const subconv = ipaddr.IPv4.parse(local_netmask).prefixLengthFromSubnetMask()
+      console.log('SUBCONV', subconv)
+      const firstHost = ipaddr.IPv4.networkAddressFromCIDR(local_ip + "/" + subconv)
+      console.log('FIRSTHOST', firstHost)
+      const lastHost = ipaddr.IPv4.broadcastAddressFromCIDR(local_ip + "/" + subconv)
+      console.log('LASTHOST', lastHost)
+      const firstHostHex = sip.convertIPtoHex(firstHost)
+      console.log('FIRSTHEX', firstHostHex)
+      const lastHostHex = sip.convertIPtoHex(lastHost)
+      console.log('LASTHEX', lastHostHex)
+      const ipRange = sip.getIPRange(firstHostHex, lastHostHex);
+      const newIpRange = ipRange.length ? ipRange.slice(1) : ipRange
+    //   console.log('IP_RANGEE', newIpRange)
+
+
+      const result = {
+        local_ip,
+        local_broadcast,
+        local_netmask,
+        subconv,
+        firstHost,
+        lastHost,
+        firstHostHex,
+        lastHostHex,
+        ipRange: newIpRange
+      }
+      resolve(result)
+
+    } catch (error) {
+      console.log(error)
+    }
+  });

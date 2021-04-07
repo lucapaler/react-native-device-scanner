@@ -49,7 +49,7 @@ const TopNavigationAccessoriesShowcase = ({ title, navigation, previous }) => {
 
 export function DiscoveryStack({ navigation }) {
     return (
-        <Stack.Navigator  screenOptions={{
+        <Stack.Navigator screenOptions={{
             header: ({ scene, previous, navigation }) => {
                 const { options } = scene.descriptor;
                 const title =
@@ -66,19 +66,33 @@ export function DiscoveryStack({ navigation }) {
             }
         }}>
             <Stack.Screen name="Discovery" component={screens.Discovery} />
-            <Stack.Screen 
-                name="DeviceDetails" 
-                component={screens.DeviceInfo} 
+            <Stack.Screen
+                name="DeviceDetails"
+                component={screens.DeviceInfo}
                 options={{
                     headerTitle: 'Device Details'
-                }} 
+                }}
             />
-            <Stack.Screen 
-                name="ScanLogs" 
-                component={screens.ScanLogs} 
+            <Stack.Screen
+                name="ScanLogs"
+                component={screens.ScanLogs}
                 options={{
                     headerTitle: 'Scan Logs'
-                }} 
+                }}
+            />
+            <Stack.Screen
+                name="Configure"
+                component={screens.Configure}
+                options={{
+                    headerTitle: 'Configure'
+                }}
+            />
+            <Stack.Screen
+                name="ConfigInfo"
+                component={screens.ConfigInfo}
+                options={{
+                    headerTitle: 'Configuration Info'
+                }}
             />
         </Stack.Navigator>
     );
