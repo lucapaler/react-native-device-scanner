@@ -38,8 +38,8 @@ const ConfigurationDetails = ({ navigation, route }) => {
     const [config, setConfig] = useState({})
 
     useEffect(() => {
-        if (route.params?.config) {
-            setConfig(route.params.config)
+        if (route.params?.configuration) {
+            setConfig(JSON.parse(route.params.configuration))
         }
     }, [route.params])
 

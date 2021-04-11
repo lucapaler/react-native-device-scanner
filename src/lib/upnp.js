@@ -59,7 +59,7 @@ const parseUPnPDevice = async (msg, ip) => {
                 timeStamp: Date.now(),
                 name: 'Unknown',
                 discovery: ``,
-                error: e.message,
+                error: `[UPnP] ${e.message}`,
             };
         }
 
