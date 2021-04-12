@@ -16,7 +16,7 @@ const zeroconf = new Zeroconf();
 export const zeroConfScan = async (dispatch, actions, config) => {
 
     zeroconf.on('found', (service) => {
-        console.log('[zeroconf] found available service for scanning', `${service}._tcp.local.`);
+        console.log('[zeroconf] found device, resolving', `${service}._tcp.local.`);
     });
 
     zeroconf.on('resolved', async (service) => {
@@ -68,7 +68,6 @@ export const zeroConfScan = async (dispatch, actions, config) => {
 
         // Dispatching an action for Initiating ZeroConf Scan
         dispatch(actions.setStartDiscoveryTime('zeroconf'))
-        // zeroconf.scan('services', 'dns-sd._udp', 'local');
 
         for (let i = 0; i < config?.services?.length; i += 1) {
             zeroconf.scan(config?.services[i], 'tcp', ''); // empty domain selects default
@@ -94,13 +93,15 @@ export const zeroConfScan = async (dispatch, actions, config) => {
 
 
 export const zservicesScan = () => new Promise(async (resolve) =>  {
+    const servicesFound = [];
+
     zeroconf.on('found', async (service) => {
         // scannable services do not contain addresses, only discovered devices do
         if (!service.addresses) {
             console.log(
                 '[zeroconf] found available service for scanning', `${service}._tcp.local.`,
             );
-            resolve(service.slice(1));
+            servicesFound.push(service.slice(1));
         }
     });
 
@@ -111,7 +112,7 @@ export const zservicesScan = () => new Promise(async (resolve) =>  {
 
         zeroconf.stop();
         zeroconf.removeAllListeners();
-        resolve([])
+        resolve(servicesFound)
     };
 
     try {
