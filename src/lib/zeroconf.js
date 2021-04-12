@@ -16,7 +16,7 @@ const zeroconf = new Zeroconf();
 export const zeroConfScan = async (dispatch, actions, config) => {
 
     zeroconf.on('found', (service) => {
-        console.log('[zeroconf] found device, resolving', `${service}._tcp.local.`);
+        console.log('[zeroconf] found available device for scanning', `${service}._tcp.local.`);
     });
 
     zeroconf.on('resolved', async (service) => {
@@ -93,15 +93,14 @@ export const zeroConfScan = async (dispatch, actions, config) => {
 
 
 export const zservicesScan = () => new Promise(async (resolve) =>  {
-    const servicesFound = [];
-
+    let servicesFound = []
     zeroconf.on('found', async (service) => {
         // scannable services do not contain addresses, only discovered devices do
         if (!service.addresses) {
             console.log(
                 '[zeroconf] found available service for scanning', `${service}._tcp.local.`,
             );
-            servicesFound.push(service.slice(1));
+            servicesFound.push(service.slice(1))
         }
     });
 

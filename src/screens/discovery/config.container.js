@@ -172,6 +172,11 @@ const ConfigForm = ({ navigation, route, errorHandler }) => {
             local_netmask.methods.validate())
         if (status) {
 
+
+            console.log('^^^^^^^^^^^^^^^^^^^^^^^^')
+            console.log(groupDisplayValues)
+            console.log('^^^^^^^^^^^^^^^^^^^^^^^^')
+
             const data = {
                 ipScan: {
                     timeout: Number(timeout.props.value),

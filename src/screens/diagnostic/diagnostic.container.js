@@ -1,13 +1,26 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { logout } from '../../lib/firebase/helpers'
+import { Button, Layout } from '@ui-kitten/components'
 
+const Login = ({ navigation, route }) => {
 
-const Diagnostic = ({ navigation, route }) => {
-    return(
-        <View>
-            <Text>Diagnostic</Text>
-        </View>
+    const handleLogin = async () => {
+        try {
+            await logout()
+        } catch (error){
+            if (error.code === 'auth/operation-not-allowed') {
+                console.log('Enable anonymous in your firebase console.');
+            }
+          
+            console.error(error)
+        }
+    }
+
+    return (
+        <Layout level="2">
+            <Button onPress={handleLogin}>LogOut</Button>
+        </Layout>
     )
 }
 
-export default Diagnostic
+export default Login

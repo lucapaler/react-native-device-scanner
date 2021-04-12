@@ -45,7 +45,7 @@ export function* requestConfigAsync(action) {
                 timeout: values?.ipScan?.timeout || 100
             },
             zeroConf: {
-                services: values?.zeroConf?.services?.length? values.zeroConf.services : zeroConfServices
+                services: Object.keys(values?.zeroConf || {})?.includes("services") ? values.zeroConf.services : zeroConfServices
             }
         }
         yield put(actions.setDiscoveryConfig(null, config))        

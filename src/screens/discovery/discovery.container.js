@@ -186,7 +186,7 @@ const Discovery = ({ navigation, route }) => {
                     <View style={{ paddingVertical: '5%' }}>
                         <Button 
                             disabled = {(!isDefaultConfig || status) && !Object.keys(config).length}
-                            onPress={() => navigation.navigate('ConfigInfo', { config: config })} 
+                            onPress={() => navigation.navigate('ConfigInfo', { configuration: JSON.stringify(config) })} 
                             style={{ width: '80%', alignSelf: 'center' }} 
                         >
                             Check Configuration
