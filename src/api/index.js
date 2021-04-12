@@ -17,7 +17,7 @@ const Api = {
                 method: 'GET',
                 headers: {
                     "accept": "application/json",
-                    "Authorization": token,
+                    "Authorization": `Bearer ${token}`,
                 },
                 url,
                 ...options
@@ -37,7 +37,7 @@ const Api = {
                 method: 'PATCH',
                 headers: {
                     "accept": "application/json",
-                    "Authorization": token,
+                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
                 data: JSON.stringify(data),
@@ -59,7 +59,7 @@ const Api = {
                 method: 'POST',
                 headers: {
                     "accept": "application/json",
-                    "Authorization": token,
+                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
                 data: JSON.stringify(data),
@@ -80,7 +80,7 @@ const Api = {
                 method: 'PUT',
                 headers: {
                     "accept": "application/json",
-                    "Authorization": token,
+                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
                 data: JSON.stringify(data),
