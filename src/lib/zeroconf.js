@@ -1,5 +1,6 @@
 import Zeroconf from 'react-native-zeroconf';
 import { fetchMacVendor, ipv62mac } from './helpers'
+import { store } from '../redux/store'
 
 
 /**
@@ -70,6 +71,11 @@ export const zeroConfScan = async (dispatch, actions, config) => {
         dispatch(actions.setStartDiscoveryTime('zeroconf'))
 
         for (let i = 0; i < config?.services?.length; i += 1) {
+            
+            if(!store.getState()?.discoveryReducer?.scan){ 
+                return
+            }
+            
             zeroconf.scan(config?.services[i], 'tcp', ''); // empty domain selects default
 
             // eslint-disable-next-line no-await-in-loop

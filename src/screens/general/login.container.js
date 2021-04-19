@@ -3,18 +3,36 @@ import { StyleSheet } from 'react-native'
 import auth from '@react-native-firebase/auth'
 import messaging from '@react-native-firebase/messaging'
 import { Button, Layout } from '@ui-kitten/components'
-import { getMacAddress } from 'react-native-device-info';
+import { getUserProfile, updateUserProfile, registerUser } from '../../api/methods/account'
 
 const Login = ({ navigation, route }) => {
+
+    const fetchUserInfo = async (token) => {
+        try {
+            const userInfoResp = await getUserProfile()
+
+            if(userInfoResp.error && userInfoResp.status === 404) {
+                const registerUserResp  = await registerUser()
+                if(!registerUserResp.error && registerUserResp.status === 201){
+                    console.log('REGISTERED')
+                }
+            }
+
+            const updateUserInfoResp = await updateUserProfile(token)
+
+            console.log(updateUserInfoResp.data)
+
+            
+        } catch (error){
+            console.log(error)
+        }
+    }
 
     const handleLogin = async () => {
         try {
             await auth().signInAnonymously()
             const token = await messaging().getToken()
-            const macAdd = await getMacAddress()
-            // API FOR HANDLING FCM TOKEN
-            console.log('######################## T O K E N ######################', token)
-            console.log('######################## MAC ADDRESS ######################', macAdd)
+            await fetchUserInfo(token)
         } catch (error) {
             if (error.code === 'auth/operation-not-allowed') {
                 console.log('Enable anonymous in your firebase console.');
@@ -26,7 +44,7 @@ const Login = ({ navigation, route }) => {
 
     return (
         <Layout level="2" style={styles.container}>
-            <Button onPress={handleLogin} status="basic" style={{ elevation: 3 }}>Login!</Button>
+            <Button onPress={handleLogin} status="basic" style={{ elevation: 3 }}>Login / Register!</Button>
         </Layout>
     )
 }

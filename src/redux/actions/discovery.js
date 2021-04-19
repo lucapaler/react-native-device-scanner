@@ -14,6 +14,12 @@ export function endDiscovery() {
   }
 }
 
+export function terminateScan() {
+  return {
+    type: types.TERMINATE_SCAN
+  }
+}
+
 export function errorDiscovery(protocol, error) {
   return {
     type: types.ERROR_DISCOVERY,

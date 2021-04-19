@@ -5,6 +5,7 @@ import auth from '@react-native-firebase/auth'
 import messaging from '@react-native-firebase/messaging'
 import MainBottomTab from './app/tabs'
 import { navigationRef } from './NavigationService';
+import { updateUserProfile } from '../api/methods/account'
 
 // Screens
 import screens from '../screens'
@@ -21,9 +22,14 @@ function App() {
     if (initializing) setInitializing(false);
   }
 
-  function onMessagingTokenRefresh(token) {
-    // API FOR FCM TOKEN
+  async function onMessagingTokenRefresh(token) {
     console.log('######################## T O K E N ######################', token)
+    const updateUserInfoResp = await updateUserProfile(token)
+    console.log(updateUserInfoResp.data)
+    if(updateUserInfoResp.error){
+      console.log('[MESSAGING TOKEN REFRESH]', error)
+    }
+
     if (initializing) setInitializing(false);
   }
 

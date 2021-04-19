@@ -30,7 +30,7 @@ const rootReducer = (state, action) => {
 
 const enhancers = [applyMiddleware(...middleware)];
 const persistConfig = { enhancers };
-const store = createStore(rootReducer, undefined, compose(...enhancers));
+export const store = createStore(rootReducer, undefined, compose(...enhancers));
 const persistor = persistStore(store, persistConfig, () => {
   //   console.log('Test', store.getState());
 });

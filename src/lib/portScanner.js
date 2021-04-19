@@ -1,63 +1,8 @@
 import TcpSocket from 'react-native-tcp-socket';
 import Ping from 'react-native-ping';
-import { networkPromise } from './helpers'
+import { store } from '../redux/store'
 
-
-// const networkPromise = () => new Promise(async function (resolve, reject) {
-//     try {
-
-//       const net_info = await NetInfo.fetch()
-//       console.log('NET_INFO', net_info)
-//       const local_ip = net_info.details.ipAddress
-//       console.log('IP', local_ip)
-//       const local_broadcast = await NetworkInfo.getBroadcast()
-//       console.log('BROADCAST', local_broadcast)
-//       const local_netmask = net_info.details.subnet
-//       console.log('NETMASK', local_netmask)
-//       const subconv = ipaddr.IPv4.parse(local_netmask).prefixLengthFromSubnetMask()
-//       console.log('SUBCONV', subconv)
-//       const firstHost = ipaddr.IPv4.networkAddressFromCIDR(local_ip + "/" + subconv)
-//       console.log('FIRSTHOST', firstHost)
-//       const lastHost = ipaddr.IPv4.broadcastAddressFromCIDR(local_ip + "/" + subconv)
-//       console.log('LASTHOST', lastHost)
-//       const firstHostHex = sip.convertIPtoHex(firstHost)
-//       console.log('FIRSTHEX', firstHostHex)
-//       const lastHostHex = sip.convertIPtoHex(lastHost)
-//       console.log('LASTHEX', lastHostHex)
-//       const ipRange = sip.getIPRange(firstHostHex, lastHostHex);
-//       const newIpRange = ipRange.length ? ipRange.slice(1) : ipRange
-//       console.log('IP_RANGEE', newIpRange)
-
-
-//       const result = {
-//         local_ip,
-//         local_broadcast,
-//         local_netmask,
-//         subconv,
-//         firstHost,
-//         lastHost,
-//         firstHostHex,
-//         lastHostHex,
-//         ipRange: newIpRange
-//       }
-//       resolve(result)
-
-//     } catch (error) {
-//       console.log(error)
-//     }
-//   });
-
-
-// const ping = (range) => new Promise(async (resolve) => {
-//     let active_ips = []
-//     for (const ip of range) {
-//         try {
-//             const status = await Ping.start(ip, { timeout: 100 })
-//             active_ips.push(ip)
-//         } catch (error) { }
-//     }
-//     resolve(active_ips)
-// })
+// const { store } = configureStore()
 
 const portScanner = (ip) => new Promise (async (resolve) => {
     let port_status = []
@@ -79,38 +24,18 @@ const portScanner = (ip) => new Promise (async (resolve) => {
     resolve(port_status)
 })
 
-// export const ScanIps = () => new Promise (async (resolve) => {
-//     try {
-
-//         const response = await networkPromise()
-//         const active_ips = await ping(response['ipRange'])
-//         console.log(active_ips)
-//         resolve(active_ips)
-//         // for(const ip of active_ips){
-//         //     const port_status = await portScanner(ip)
-//         //     return port_status
-//         //     console.log('######')
-//         //     console.log(port_status)
-//         //     console.log('######')
-//         // }
-//     } catch (error) {
-//         console.log('[PORT SCANNER ERROR]', error)
-//     }
-// })
-
-
 
 export const ScanIps = async (dispatch, actions, config) => {
     try {
-
-        // console.log('##################################',timeout)
 
         // Dispatching an action for Initiating ZeroConf Scan
         dispatch(actions.setStartDiscoveryTime('ipScan'))
 
         // const response = await networkPromise()
         for (const ip of config['ipRange']) {
-            // for (const ip of response['ipRange']) {
+            if(!store.getState()?.discoveryReducer?.scan){ 
+                return
+            }
             try {
                 const status = await Ping.start(ip, { timeout: config.timeout })
                 dispatch(actions.deviceDiscovered({ip, protocol: 'IP-Scan', timeStamp: Date.now() }))

@@ -44,7 +44,7 @@ const Api = {
                 url,
                 ...options
             }
-            // console.log(config)
+            console.log(config)
             return axios(config)
         } catch (error) {
             throw error

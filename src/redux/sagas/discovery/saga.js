@@ -1,27 +1,52 @@
-import { call, put, fork } from 'redux-saga/effects';
+import { call, put, fork, take, cancelled, cancel } from 'redux-saga/effects';
 import { detectUPnPDevices } from '../../../lib/upnp'
 import { zeroConfScan } from '../../../lib/zeroconf'
 import { ScanIps } from '../../../lib/portScanner'
 import { networkPromise } from '../../../lib/helpers'
 import { zservicesScan } from '../../../lib/zeroconf'
 import * as actions from '../../actions/discovery'
+import * as types from '../../types/discovery';
+
 
 function* ipScanner(action){
-    yield call(ScanIps, action.dispatch, actions, action.config.ipScan)
+    try {
+        yield call(ScanIps, action.dispatch, actions, action.config.ipScan)
+    } finally {
+        if(yield cancelled()) {
+            yield put(actions.setEndDiscoveryTime('ipScan'))
+        }
+    }
 }
 
 function* upnpScan(action) {
-    yield call(detectUPnPDevices, action.dispatch, actions)
+    try{
+        yield call(detectUPnPDevices, action.dispatch, actions)
+    } finally {
+        if(yield cancelled()) {
+            yield put(actions.setEndDiscoveryTime('upnp'))
+        }
+    }
 } 
 
 function* zconfScan(action){
-    yield call(zeroConfScan, action.dispatch, actions, action.config.zeroConf)
+    try {
+        yield call(zeroConfScan, action.dispatch, actions, action.config.zeroConf)
+    } finally {
+        if(yield cancelled()) {
+            yield put(actions.setEndDiscoveryTime('zeroconf'))
+        }
+    }
 }
 
 function* runTasks(action){
-    yield fork(upnpScan, action)
-    yield fork(zconfScan, action)
-    yield fork(ipScanner, action)
+    const upnp = yield fork(upnpScan, action)
+    const zconf = yield fork(zconfScan, action)
+    const ipScan = yield fork(ipScanner, action)
+
+    yield take(types.TERMINATE_SCAN)
+    yield cancel(ipScan)
+    yield cancel(upnp)
+    yield cancel(zconf)
 }
 
 

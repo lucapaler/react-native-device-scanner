@@ -1,7 +1,5 @@
 import dgram from 'react-native-udp';
 import XMLParser from 'react-xml-parser';
-// import configureStore from '../redux/store'
-
 
 const xmlParser = new XMLParser();
 // const { store } = configureStore()
@@ -126,10 +124,11 @@ export const detectUPnPDevices = async (dispatch, actions) => {
         }
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+
+    await new Promise((resolve) => 
+            setTimeout(resolve, 10000));
     // Dispatcing an action for Ending Upnp Scan
     dispatch(actions.setEndDiscoveryTime('upnp'))
     socket.removeAllListeners();
     socket.close();
-
 };

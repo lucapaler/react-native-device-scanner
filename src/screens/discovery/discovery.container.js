@@ -59,7 +59,14 @@ const Discovery = ({ navigation, route }) => {
             setIsBrowsingLogs(true)
             setConfig(Devices.config)
         }
+
+        return () => {
+            if(status){
+                console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+            }
+        }
     }, [status])
+
 
     useEffect(() => {
         if (isDefaultConfig) {
@@ -149,7 +156,7 @@ const Discovery = ({ navigation, route }) => {
     return (
         <Layout level="2">
             <FlatList
-                onRefresh={scan}
+                onRefresh={null}
                 refreshing={false}
                 keyExtractor={(item, index) => `${index}`}
                 data={active}
@@ -161,7 +168,7 @@ const Discovery = ({ navigation, route }) => {
                         <Button 
                             status={(status)? 'danger': 'primary'}
                             disabled={isBrowsingLogs? false: (!isDefaultConfig && !Object.keys(config).length && !status)} 
-                            onPress={() =>  isBrowsingLogs? setIsBrowsingLogs(false) : (status)? dispatch(actions.endDiscovery()) : scan()} 
+                            onPress={() =>  isBrowsingLogs? setIsBrowsingLogs(false) : (status)? dispatch(actions.terminateScan()) : scan()} 
                             style={{ width: '80%', alignSelf: 'center' }} 
                             accessoryLeft={LoadingIndicator}>
                                 {isBrowsingLogs? `NEW SCAN`: (status)? `TERMINATE`: `INITIATE SCAN`}

@@ -33,10 +33,6 @@ export const discoveryReducer = createReducer(initialState, {
             }
         }
 
-        // if(Object.keys(state.last).length){
-        //     newState.old.push(state.last)
-        // }
-
         return newState
     },
     [types.SET_START_DISCOVERY_TIME](state, action) {
@@ -97,4 +93,7 @@ export const discoveryReducer = createReducer(initialState, {
         }
         return newState
     },
+    // [types.TERMINATE_SCAN](state, action) {
+    //     return {...state, scan: false }
+    // },
 });
