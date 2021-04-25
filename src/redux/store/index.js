@@ -1,44 +1,47 @@
-import { createStore, compose, applyMiddleware } from 'redux';
-import { persistStore, persistCombineReducers } from 'redux-persist';
+import { combineReducers, createStore, applyMiddleware } from 'redux';
+import { persistStore, persistReducer } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createSagaMiddleware from 'redux-saga';
-// import { createLogger } from 'redux-logger';
-import rootReducers from '../reducers'; // where reducers is a object of reducers
-import sagas from '../sagas';
 
-const config = {
+import { profileReducer, discoveryReducer } from '../reducers';
+import sagas from '../sagas';
+import logger from './logger';
+
+const rootPersistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  blacklist: ['loadingReducer'],
-  // debug: true, //to get useful logging
 };
 
-const middleware = [];
+const profilePersistConfig = {
+  key: 'profile',
+  storage: AsyncStorage,
+  blacklist: ['error'],
+};
+
+const discoveryPersistConfig = {
+  key: 'discovery',
+  storage: AsyncStorage,
+  blacklist: ['scan'], // "loading" key basically
+};
+
 const sagaMiddleware = createSagaMiddleware();
 
-middleware.push(sagaMiddleware);
-
-// if (__DEV__) {
-//   middleware.push(createLogger());
-// }
-
-const appReducers = persistCombineReducers(config, rootReducers);
-
-const rootReducer = (state, action) => {
-  return appReducers(state, action)
-}
-
-const enhancers = [applyMiddleware(...middleware)];
-const persistConfig = { enhancers };
-export const store = createStore(rootReducer, undefined, compose(...enhancers));
-const persistor = persistStore(store, persistConfig, () => {
-  //   console.log('Test', store.getState());
+const rootReducer = combineReducers({
+  profile: persistReducer(profilePersistConfig, profileReducer),
+  discovery: persistReducer(discoveryPersistConfig, discoveryReducer),
 });
-const configureStore = () => {
-  return { persistor, store };
-};
+
+const persistedReducer = persistReducer(rootPersistConfig, rootReducer);
+
+const store = createStore(
+  persistedReducer,
+  applyMiddleware(sagaMiddleware, logger),
+);
+
+const persistor = persistStore(store);
+
+// persistor.purge();
+
+export { store, persistor };
 
 sagaMiddleware.run(sagas);
-
-export default configureStore;
-

@@ -1,99 +1,165 @@
-import createReducer from '../../lib/createReducer';
-import * as types from '../types/discovery';
-import * as _ from 'lodash'
+import {
+  START_DISCOVERY, SET_START_DISCOVERY_TIME, SET_END_DISCOVERY_TIME, DEVICE_DISCOVERED,
+  ERROR_DISCOVERY, END_DISCOVERY, SET_DISCOVERY_CONFIG, TERMINATE_SCAN,
+} from '../types/discovery';
+import initialState from '../store/initialState';
 
-/* App Reducer
- * handles state in the App Container
- */
+export default function discoveryReducer(state = initialState.discovery, action = {}) {
+  switch (action.type) {
+    case START_DISCOVERY:
+      return {
+        ...state,
+        scan: true,
+        last: {
+          config: action.config,
+          execution: Date.now(),
+          time: {
+            start: {},
+            end: {},
+          },
+          discovered: [],
+          error: {},
+          termination: null,
+        },
+      };
 
-const initialState = {
-    discovered: false,
-    scan: false,
-    old: [],
-    last: {},
-    config: {}
-};
+    case SET_START_DISCOVERY_TIME:
+      if (!state.scan) {
+        return state;
+      }
 
-export const discoveryReducer = createReducer(initialState, {
-    [types.START_DISCOVERY](state, action) {
-        
-        let newState = {
-            scan: true,
-            old: [...state.old],
-            last: {
-                    config: action.config,
-                    execution: Date.now(),
-                    time: {
-                        start: {},
-                        end: {}
-                    },
-                    discovered: [],
-                    error: {},
-                    termination: null
-            }
-        }
+      return {
+        ...state,
+        last: {
+          ...state.last,
+          time: {
+            ...state.last.time,
+            start: {
+              ...state.last.time.start,
+              [action.protocol]: Date.now(),
+            },
+          },
+        },
+      };
 
-        return newState
-    },
-    [types.SET_START_DISCOVERY_TIME](state, action) {
-        if(!state.scan){
-            return state
-        }
-        return {...state, last: {...state.last, time: { ... state.last.time, start: { ...state.last.time.start, [action.protocol]: Date.now() }}}}
-    },
-    [types.SET_END_DISCOVERY_TIME](state, action) {
-        if(!state.scan){
-            return state
-        }
-        return {...state, last: {...state.last, time: { ... state.last.time, end: { ...state.last.time.end, [action.protocol]: Date.now() }}}}
-    },
-    [types.DEVICE_DISCOVERED](state, action) {
-        if(!state.scan) {
-            return state
-        }
+    case SET_END_DISCOVERY_TIME:
+      if (!state.scan) {
+        return state;
+      }
 
-        let newState = { ...state }
-        newState.last.discovered.push(action.info)
-        return newState
-    },
-    [types.ERROR_DISCOVERY](state, action) {
-        if(!state.scan){
-            return state
-        }
-        return {...state, last: {...state.last, error: { ... state.last.error, [action.protocol]: action.error?.message}}}
-    },
-    [types.END_DISCOVERY](state, action) {
-        if(!state.scan) {
-            return state
-        }
+      return {
+        ...state,
+        last: {
+          ...state.last,
+          time: {
+            ...state.last.time,
+            end: {
+              ...state.last.time.end,
+              [action.protocol]: Date.now(),
+            },
+          },
+        },
+      };
 
-        const lastDiscovery = {
+    case DEVICE_DISCOVERED:
+      if (!state.scan) {
+        return state;
+      }
+
+      return {
+        ...state,
+        last: {
+          ...state.last,
+          discovered: state.last.discovered.some(({ ip }) => ip === action.info.ip)
+            ? state.last.discovered.map((device) => {
+              if (device.ip === action.info.ip) {
+                return {
+                  ip: device.ip,
+                  mac: device.mac || action.info.mac,
+                  possibleMac: device.possibleMac || action.info.possibleMac,
+                  manufacturer: device.manufacturer || action.info.manufacturer,
+                  protocol: [...new Set([...device.protocol, ...action.info.protocol])],
+                  timeStamp: [...device.timeStamp, ...action.info.timeStamp],
+                  name: device.name || action.info.name,
+                  model: device.model || action.info.model,
+                  discovery: [...device.discovery, ...action.info.discovery],
+                  txt: {
+                    ...device.txt,
+                    ...action.info.txt,
+                  },
+                };
+              }
+
+              return device;
+            })
+            : [...state.last.discovered, action.info],
+        },
+      };
+
+    case ERROR_DISCOVERY:
+      if (!state.scan) {
+        return state;
+      }
+
+      return {
+        ...state,
+        last: {
+          ...state.last,
+          error: {
+            ...state.last.error,
+            [action.protocol]: action.error?.message,
+          },
+        },
+      };
+
+    case END_DISCOVERY:
+      if (!state.scan) {
+        return state;
+      }
+
+      return {
+        ...state,
+        scan: false,
+        last: {
+          ...state.last,
+          termination: Date.now(),
+        },
+        old: [
+          ...state.old,
+          {
             ...state.last,
-            termination: Date.now()
-        }
+            termination: Date.now(),
+          },
+        ],
+      };
 
-        let newState = {
-            ...state,
-            scan: false,
-            last: lastDiscovery
-        }
+    case SET_DISCOVERY_CONFIG:
+      if (action.protocol) {
+        return {
+          ...state,
+          config: {
+            ...state.config,
+            [action.protocol]: action.config,
+          },
+        };
+      }
 
-        newState.old.push(lastDiscovery)
+      return {
+        ...state,
+        config: action.config,
+      };
 
+    case TERMINATE_SCAN:
+      return {
+        ...state,
+        scan: false,
+        last: {
+          ...state.last,
+          termination: Date.now(),
+        },
+      };
 
-        return newState
-    },
-    [types.SET_DISCOVERY_CONFIG](state, action) {
-        const { config, ...rest } = state
-        let newState = {...rest} 
-        if(action.protocol){
-            newState.config = {...config, [action.protocol]: { ...action.config }}
-        } else {
-            newState.config = action.config
-        }
-        return newState
-    },
-    // [types.TERMINATE_SCAN](state, action) {
-    //     return {...state, scan: false }
-    // },
-});
+    default:
+      return state;
+  }
+}

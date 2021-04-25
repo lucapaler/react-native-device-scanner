@@ -1,9 +1,4 @@
-import * as  discoveryReducer  from './discovery';
+import profileReducer from './profile';
+import discoveryReducer from './discovery';
 
-/*
- * combines all the existing reducers
- */
-
-const reducers = Object.assign({}, discoveryReducer); 
-
-export default reducers
+export { profileReducer, discoveryReducer };

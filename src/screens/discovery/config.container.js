@@ -11,7 +11,7 @@ import { requestDiscoveryConfig } from '../../redux/actions/discovery'
 const ConfigForm = ({ navigation, route, errorHandler }) => {
 
     const dispatch = useDispatch()
-    const DefaultConfiguration = useSelector(state => state.discoveryReducer?.config)
+    const DefaultConfiguration = useSelector(state => state.discovery?.config)
     const [config, setConfig] = useState({})
     const [back, setBack] = useState(false)
     const [zconfServicesIdx, setZConfServicesIdx] = useState([])

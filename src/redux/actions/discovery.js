@@ -3,9 +3,9 @@ import * as types from '../types/discovery';
 export function startDiscovery(dispatch, config) {
   return {
     type: types.START_DISCOVERY,
+    config,
     dispatch,
-    config
-  }
+  };
 }
 
 export function endDiscovery() {

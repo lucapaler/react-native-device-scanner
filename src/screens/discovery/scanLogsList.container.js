@@ -7,7 +7,7 @@ import moment from 'moment'
 
 function SearchScreen({ navigation, route }) {
   const theme = useTheme()
-  const data = useSelector( state => state.discoveryReducer?.old )
+  const data = useSelector( state => state.discovery?.old )
 
   const renderSeparator = () => {
     return (

@@ -1,7 +1,8 @@
 {
     "env": {
         "es6": true,
-        "node": true
+        "node": true,
+        "browser": true
     },
     "extends": [
         "airbnb"
@@ -14,7 +15,7 @@
         "ecmaFeatures": {
             "jsx": true
         },
-        "ecmaVersion": 2018,
+        "ecmaVersion": 2021,
         "sourceType": "module"
     },
     "plugins": [
@@ -31,6 +32,7 @@
             }
         ],
         "no-use-before-define": "off",
-        "no-nested-ternary": "off"
+        "no-nested-ternary": "off",
+        "react/jsx-props-no-spreading": "off"
     }
 }

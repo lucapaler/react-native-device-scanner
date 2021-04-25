@@ -1,8 +1,60 @@
 import { NetworkInfo } from 'react-native-network-info';
 import sip from 'shift8-ip-func';
 import ipaddr from 'ipaddr.js';
-import NetInfo from "@react-native-community/netinfo";
+import NetInfo from '@react-native-community/netinfo';
+import auth from '@react-native-firebase/auth';
+import axios from 'axios';
+import wifi from 'react-native-android-wifi';
 
+const successCodes = [200, 201, 202, 204, 303];
+// const baseUrl = 'https://v2-0-39-dot-watutors-1.uc.r.appspot.com/v2/';
+const baseUrl = 'http://192.168.4.26:3001/v2/';
+
+export const apiFetch = async ({ method, endpoint, body = {} }) => {
+  const config = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${await auth().currentUser.getIdToken()}`,
+    },
+    url: `${baseUrl}${endpoint.replace('+', '%2B')}`,
+  };
+
+  if (method !== 'GET') config.data = JSON.stringify(body);
+
+  const time = new Date().getTime();
+
+  console.log(`API ${method} initiated: ${baseUrl}${endpoint}: ${JSON.stringify(config, null, 2)}`);
+
+  return axios(config);
+};
+
+const parseResponse = async (response, endpoint, time) => {
+  console.log('RAW RESPONSE', response);
+
+  const { status, headers } = response;
+
+  console.log(`${new Date().getTime() - time}ms ${endpoint} HTML response code: ${status}`);
+
+  if (!successCodes.includes(status)) {
+    throw new Error(`${status} - ${await response.text()}`);
+  }
+
+  const content = headers.get('content-type');
+  if (content.includes('json')) {
+    return response.json()
+      .then((data) => {
+        console.log(`Response content JSON: ${JSON.stringify(data, null, 2)}`);
+        return data;
+      });
+  }
+
+  return response.text()
+    .then((data) => {
+      console.log(`Response content not JSON, instead ${content}: ${data}`);
+      return data;
+    });
+};
 
 /**
  * Fetches MAC vendor information.
@@ -13,21 +65,16 @@ import NetInfo from "@react-native-community/netinfo";
  *
  * @returns {string} MAC vendor, if found, else empty result.
  */
+export const fetchMacVendor = (mac) => fetch(`https://api.maclookup.app/v2/macs/${mac}`)
+  .then((response) => response.json())
+  .then(({ found, company }) => {
+    if (found) return company;
 
-
-export const fetchMacVendor = (mac) => new Promise( async (resolve, reject) => {
-    if (mac) {
-        try {
-            const response = await fetch(`https://api.maclookup.app/v2/macs/${mac}`)
-            const { found, company } = await response.json()
-            if (found) resolve(company)
-        } catch (error) {
-            reject(error)
-        }
-    }
-
-    resolve('');
-});
+    return '';
+  })
+  .catch((error) => {
+    console.log('[zeroconf] ERROR', error);
+  });
 
 /**
  * Converts IPv6 link-local address to MAC address.
@@ -49,79 +96,79 @@ export const fetchMacVendor = (mac) => new Promise( async (resolve, reject) => {
  */
 
 export const ipv62mac = (ipv6) => {
-    const ipv6Parts = ipv6.split(':').slice(-4);
-    const macParts = [];
+  const ipv6Parts = ipv6.split(':').slice(-4);
+  const macParts = [];
 
-    for (let i = 0; i < ipv6Parts.length; i += 1) {
-        let ipv6Part = ipv6Parts[i];
+  for (let i = 0; i < ipv6Parts.length; i += 1) {
+    let ipv6Part = ipv6Parts[i];
 
-        while (ipv6Part.length < 4) {
-            ipv6Part = `0${ipv6Part}`;
-        }
-
-        macParts.push(ipv6Part.slice(0, 2));
-        macParts.push(ipv6Part.slice(-2));
+    while (ipv6Part.length < 4) {
+      ipv6Part = `0${ipv6Part}`;
     }
 
-    // eslint-disable-next-line no-bitwise
-    macParts[0] = (parseInt(macParts[0], 16) ^ 2).toString(16);
+    macParts.push(ipv6Part.slice(0, 2));
+    macParts.push(ipv6Part.slice(-2));
+  }
 
-    if (macParts[0].length === 1) {
-        macParts[0] = `0${macParts[0]}`;
-    }
+  // eslint-disable-next-line no-bitwise
+  macParts[0] = (parseInt(macParts[0], 16) ^ 2).toString(16);
 
-    macParts.splice(4, 1);
+  if (macParts[0].length === 1) {
+    macParts[0] = `0${macParts[0]}`;
+  }
 
-    macParts.splice(3, 1);
+  macParts.splice(4, 1);
 
-    return macParts.join(':');
+  macParts.splice(3, 1);
+
+  return macParts.join(':');
 };
 
 /**
- * For fetching network information 
+ * For fetching network information
  * @returns {Object} of network Info
  */
+export const networkPromise = async (values) => {
+  try {
+    const netInfo = await NetInfo.fetch(); // seems to fetch incorrect subnet
+    console.log('NET_INFO', netInfo);
+    const localIp = values?.localIp || netInfo.details.ipAddress;
+    console.log('IP', localIp);
+    const localNetmask = values?.localNetmask || await NetworkInfo.getSubnet();
+    console.log('NETMASK', localNetmask);
+    const subconv = ipaddr.IPv4.parse(localNetmask).prefixLengthFromSubnetMask();
+    console.log('SUBCONV', subconv);
+    const firstHost = ipaddr.IPv4.networkAddressFromCIDR(`${localIp}/${subconv}`);
+    console.log('FIRSTHOST', firstHost);
+    const lastHost = ipaddr.IPv4.broadcastAddressFromCIDR(`${localIp}/${subconv}`);
+    console.log('LASTHOST', lastHost);
+    const firstHostHex = sip.convertIPtoHex(firstHost);
+    console.log('FIRSTHEX', firstHostHex);
+    const lastHostHex = sip.convertIPtoHex(lastHost);
+    console.log('LASTHEX', lastHostHex);
+    const ipRange = sip.getIPRange(firstHostHex, lastHostHex);
+    const newIpRange = ipRange.length ? ipRange.slice(1) : ipRange;
 
-export const networkPromise = (values) => new Promise(async function (resolve, reject) {
-    try {
+    return {
+      localIp,
+      localNetmask,
+      subconv,
+      firstHost,
+      lastHost,
+      firstHostHex,
+      lastHostHex,
+      ipRange: newIpRange,
+    };
+  } catch (error) {
+    console.log('[network details] ERROR', error);
 
-      const net_info = await NetInfo.fetch()
-      console.log('NET_INFO', net_info)
-      const local_ip = values?.local_ip || net_info.details.ipAddress
-      console.log('IP', local_ip)
-      const local_broadcast = await NetworkInfo.getBroadcast()
-      console.log('BROADCAST', local_broadcast)
-      const local_netmask = values?.local_netmask || net_info.details.subnet
-      console.log('NETMASK', local_netmask)
-      const subconv = ipaddr.IPv4.parse(local_netmask).prefixLengthFromSubnetMask()
-      console.log('SUBCONV', subconv)
-      const firstHost = ipaddr.IPv4.networkAddressFromCIDR(local_ip + "/" + subconv)
-      console.log('FIRSTHOST', firstHost)
-      const lastHost = ipaddr.IPv4.broadcastAddressFromCIDR(local_ip + "/" + subconv)
-      console.log('LASTHOST', lastHost)
-      const firstHostHex = sip.convertIPtoHex(firstHost)
-      console.log('FIRSTHEX', firstHostHex)
-      const lastHostHex = sip.convertIPtoHex(lastHost)
-      console.log('LASTHEX', lastHostHex)
-      const ipRange = sip.getIPRange(firstHostHex, lastHostHex);
-      const newIpRange = ipRange.length ? ipRange.slice(1) : ipRange
-    //   console.log('IP_RANGEE', newIpRange)
+    return null;
+  }
+};
 
-
-      const result = {
-        local_ip,
-        local_broadcast,
-        local_netmask,
-        subconv,
-        firstHost,
-        lastHost,
-        firstHostHex,
-        lastHostHex,
-        ipRange: newIpRange
-      }
-      resolve(result)
-
-    } catch (error) {
-      console.log(error)
-    }
-  });
+export const scanBSSIDs = () => wifi.loadWifiList(
+  (wifiStringList) => JSON.parse(wifiStringList).map(({ BSSID }) => BSSID),
+  (error) => {
+    console.log('[scan BSSIDs] ERROR', error);
+  },
+);

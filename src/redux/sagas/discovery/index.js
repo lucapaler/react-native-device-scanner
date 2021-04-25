@@ -1,8 +1,8 @@
-import { takeLatest } from 'redux-saga/effects'
-import * as types from '../../types/discovery';
-import * as sagas from './saga'
+import { takeLatest } from 'redux-saga/effects';
+import { START_DISCOVERY, REQUEST_DISCOVERY_CONFIG } from '../../types/discovery';
+import { startDiscoveryAsync, requestConfigAsync } from './saga';
 
-export const discoverySagas = [
-    takeLatest(types.START_DISCOVERY, sagas.startDiscoveryAsync),
-    takeLatest(types.REQUEST_DISCOVERY_CONFIG, sagas.requestConfigAsync),
+export default [
+  takeLatest(START_DISCOVERY, startDiscoveryAsync),
+  takeLatest(REQUEST_DISCOVERY_CONFIG, requestConfigAsync),
 ];

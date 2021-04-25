@@ -1,8 +1,11 @@
 import dgram from 'react-native-udp';
 import XMLParser from 'react-xml-parser';
 
+import {
+  setStartDiscoveryTime, deviceDiscovered, setEndDiscoveryTime,
+} from '../redux/actions/discovery';
+
 const xmlParser = new XMLParser();
-// const { store } = configureStore()
 
 /**
  * Parses UPnP device information.
@@ -21,55 +24,49 @@ const xmlParser = new XMLParser();
  *
  * @returns {Object} Any new device information found combined with preexisting info.
  */
-
-
 const parseUPnPDevice = async (msg, ip) => {
-    const regex = /http:\/\/.+/g;
+  const regex = /http:\/\/.+/g;
 
-    const matches = regex.exec(msg);
+  const matches = regex.exec(msg);
 
-    if (matches && matches.length > 0) {
-        const link = matches[0];
+  if (matches && matches.length > 0) {
+    const link = matches[0];
 
-        console.log('[UPnP] DISCOVERY INFO ', ip, 'manifest at', link);
+    console.log('[UPnP] DISCOVERY INFO ', ip, 'manifest at', link);
 
-        try {
-            const response = await fetch(link, { method: 'GET' });
-            const rawXml = await response.text();
-            const xml = xmlParser.parseFromString(rawXml);
-            const possibleNames = xml.getElementsByTagName('friendlyName');
-            const possibleManufacturers = xml.getElementsByTagName('manufacturer');
+    try {
+      const response = await fetch(link, { method: 'GET' });
+      const rawXml = await response.text();
+      const xml = xmlParser.parseFromString(rawXml);
+      const possibleNames = xml.getElementsByTagName('friendlyName');
+      const possibleManufacturers = xml.getElementsByTagName('manufacturer');
 
-            return {
-                ip,
-                protocol: 'UPnP',
-                timeStamp: Date.now(),
-                name: possibleNames.length > 0 ? possibleNames[0].value : 'Unknown',
-                manufacturer: possibleManufacturers.length > 0 ? possibleManufacturers[0].value : '',
-                discovery: `${link}`,
-            };
-
-        } catch (e) {
-
-            return {
-                ip,
-                protocol: 'UPnP',
-                timeStamp: Date.now(),
-                name: 'Unknown',
-                discovery: ``,
-                error: `[UPnP] ${e.message}`,
-            };
-        }
-
-    }
-
-    return {
+      return {
         ip,
-        protocol: 'UPnP',
-        timeStamp: Date.now(),
-        discovery: ``,
-    };
+        protocol: ['UPnP'],
+        timeStamp: [Date.now()],
+        name: possibleNames.length > 0 ? possibleNames[0].value : '',
+        manufacturer: possibleManufacturers.length > 0 ? possibleManufacturers[0].value : '',
+        discovery: [`${link}`],
+      };
+    } catch (e) {
+      return {
+        ip,
+        protocol: ['UPnP'],
+        timeStamp: [Date.now()],
+        name: '',
+        discovery: [''],
+        error: `[UPnP] ${e.message}`,
+      };
+    }
+  }
 
+  return {
+    ip,
+    protocol: ['UPnP'],
+    timeStamp: [Date.now()],
+    discovery: [''],
+  };
 };
 
 /**
@@ -89,46 +86,40 @@ const parseUPnPDevice = async (msg, ip) => {
  *
  * @listens message
  */
-
-export const detectUPnPDevices = async (dispatch, actions) => {
-
-    const socket = dgram.createSocket({ type: 'udp4', debug: true })
-    socket.bind(1900);
-    socket.once('listening', () => {
-        // Dispatching an action for Initiating Upnp Scan
-        dispatch(actions.setStartDiscoveryTime('upnp'))
-        console.log('[UPnP] LISTENING')
-        socket.send('M-SEARCH * HTTP/1.1\r\nHOST:239.255.255.250:1900\r\nST: ssdp:all\r\nMX:2\r\nMAN:"ssdp:discover"\r\n\r\n', undefined, undefined, 1900, '239.255.255.250', (error) => {
-            if (error) console.log('[UPnP] INITIAL ERROR ', error.message);
-        });
+export default async function detectUPnPDevices(dispatch) {
+  const socket = dgram.createSocket({ type: 'udp4', debug: true });
+  socket.bind(1900);
+  socket.once('listening', () => {
+    dispatch(setStartDiscoveryTime('upnp'));
+    console.log('[UPnP] LISTENING');
+    socket.send('M-SEARCH * HTTP/1.1\r\nHOST:239.255.255.250:1900\r\nST: ssdp:all\r\nMX:2\r\nMAN:"ssdp:discover"\r\n\r\n', undefined, undefined, 1900, '239.255.255.250', (error) => {
+      if (error) console.log('[UPnP] INITIAL ERROR ', error.message);
     });
+  });
 
-    const queue = [];
+  const queue = [];
 
-    socket.on('message', async (msg, { address }) => {
-        if (!queue.includes(address)) {
-            queue.push(address);
-            console.log('[upnp] FOUND', address);
+  socket.on('message', async (msg, { address }) => {
+    if (!queue.includes(address)) {
+      queue.push(address);
+      console.log('[upnp] FOUND', address);
 
-            if (msg) {
-                try {
-                    const deviceInfo = await parseUPnPDevice(msg, address)
-                    //Dispatching an action for discovered
-                    dispatch(actions.deviceDiscovered(deviceInfo))
-                    console.log('[UPnP] RESOLVED ', JSON.stringify(deviceInfo, null, 2))
-                } catch (error) {
-                    console.log('[UPnP] ERROR ', error.message)
-                }
-            }
-
+      if (msg) {
+        try {
+          const deviceInfo = await parseUPnPDevice(msg, address);
+          // Dispatching an action for discovered
+          dispatch(deviceDiscovered(deviceInfo));
+          console.log('[UPnP] RESOLVED ', JSON.stringify(deviceInfo, null, 2));
+        } catch (error) {
+          console.log('[UPnP] ERROR ', error.message);
         }
-    });
+      }
+    }
+  });
 
+  await new Promise((resolve) => setTimeout(resolve, 10000));
 
-    await new Promise((resolve) => 
-            setTimeout(resolve, 10000));
-    // Dispatcing an action for Ending Upnp Scan
-    dispatch(actions.setEndDiscoveryTime('upnp'))
-    socket.removeAllListeners();
-    socket.close();
-};
+  dispatch(setEndDiscoveryTime('upnp'));
+  socket.removeAllListeners();
+  socket.close();
+}
