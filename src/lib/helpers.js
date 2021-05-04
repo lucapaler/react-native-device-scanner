@@ -5,6 +5,12 @@ import NetInfo from '@react-native-community/netinfo';
 import auth from '@react-native-firebase/auth';
 import axios from 'axios';
 import wifi from 'react-native-android-wifi';
+import Ping from 'react-native-ping';
+import publicIP from 'react-native-public-ip';
+
+import { zeroConfScan, zservicesScan } from './zeroconf';
+import detectUPnPDevices from './upnp';
+import { scanIpRange } from './portScanner';
 
 const successCodes = [200, 201, 202, 204, 303];
 // const baseUrl = 'https://v2-0-39-dot-watutors-1.uc.r.appspot.com/v2/';
@@ -22,7 +28,7 @@ export const apiFetch = async ({ method, endpoint, body = {} }) => {
 
   if (method !== 'GET') config.data = JSON.stringify(body);
 
-  const time = new Date().getTime();
+  const time = Date.now();
 
   console.log(`API ${method} initiated: ${baseUrl}${endpoint}: ${JSON.stringify(config, null, 2)}`);
 
@@ -166,9 +172,14 @@ export const networkPromise = async (values) => {
   }
 };
 
-export const scanBSSIDs = () => wifi.loadWifiList(
-  (wifiStringList) => JSON.parse(wifiStringList).map(({ BSSID }) => BSSID),
-  (error) => {
-    console.log('[scan BSSIDs] ERROR', error);
-  },
-);
+export const scanBSSIDs = () => new Promise((resolve, reject) => {
+  wifi.loadWifiList(
+    (wifiStringList) => {
+      resolve(JSON.parse(wifiStringList).map(({ BSSID }) => BSSID));
+    },
+    (error) => {
+      console.log('[scan BSSIDs] ERROR', error);
+      reject(error);
+    },
+  );
+});

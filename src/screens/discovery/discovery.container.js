@@ -14,7 +14,6 @@ import {
 } from '../../redux/actions/discovery';
 import ScanInfo from './components/ScanInfo';
 import SearchBox from './components/SearchBox';
-import { scanBSSIDs } from '../../lib/helpers';
 
 Discovery.propTypes = {
   navigation: PropTypes.shape({
@@ -35,7 +34,7 @@ export default function Discovery({ navigation, route }) {
   const lastScan = useSelector((state) => state.discovery.last);
   const Configuration = useSelector((state) => state.discovery.config);
   const [scanInfo, setScanInfo] = useState(lastScan);
-  const status = useSelector((state) => state.discovery.scan);
+  const status = useSelector((state) => state.discovery.isScanning);
   const finished = useSelector(({ discovery }) => discovery.last.time.end);
   const [isLoading, load] = useState(false);
   const [active, setActive] = useState([]);
@@ -126,7 +125,21 @@ export default function Discovery({ navigation, route }) {
     }
   }, [status, finished]);
 
-  const scan = () => dispatch(startDiscovery(dispatch, Configuration));
+  const scan = () => {
+    // const time = Date.now();
+
+    // await Ping.start(['192.168.4.1', '192.168.4.2', '192.168.4.3'], { timeout: 1000, threads: 3 })
+    //   .then((response) => {
+    //     console.log(response);
+    //   })
+    //   .catch((error) => {
+    //     console.log(error);
+    //   });
+
+    // console.log('FINISHED', Date.now() - time);
+
+    dispatch(startDiscovery(dispatch, Configuration));
+  };
 
   const LoadingIndicator = (props) => isLoading && (
     <View {...props}>
@@ -159,6 +172,7 @@ export default function Discovery({ navigation, route }) {
                 status={(status) ? 'danger' : 'primary'}
                 disabled={!isBrowsingLogs
                   && (!isDefaultConfig && !Object.keys(config).length && !status)}
+                // onPress={scan}
                 onPress={() => (isBrowsingLogs
                   ? setIsBrowsingLogs(false)
                   : status

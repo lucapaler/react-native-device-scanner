@@ -43,19 +43,16 @@ const parseUPnPDevice = async (msg, ip) => {
 
       return {
         ip,
-        protocol: ['UPnP'],
-        timeStamp: [Date.now()],
+        protocol: ['upnp'],
+        timestamp: [Date.now()],
         name: possibleNames.length > 0 ? possibleNames[0].value : '',
         manufacturer: possibleManufacturers.length > 0 ? possibleManufacturers[0].value : '',
-        discovery: [`${link}`],
       };
     } catch (e) {
       return {
         ip,
-        protocol: ['UPnP'],
-        timeStamp: [Date.now()],
-        name: '',
-        discovery: [''],
+        protocol: ['upnp'],
+        timestamp: [Date.now()],
         error: `[UPnP] ${e.message}`,
       };
     }
@@ -64,8 +61,7 @@ const parseUPnPDevice = async (msg, ip) => {
   return {
     ip,
     protocol: ['UPnP'],
-    timeStamp: [Date.now()],
-    discovery: [''],
+    timestamp: [Date.now()],
   };
 };
 
@@ -86,11 +82,13 @@ const parseUPnPDevice = async (msg, ip) => {
  *
  * @listens message
  */
-export default async function detectUPnPDevices(dispatch) {
+export default async function detectUPnPDevices(dispatch, isHeadless) {
+  const start = Date.now();
+
   const socket = dgram.createSocket({ type: 'udp4', debug: true });
   socket.bind(1900);
   socket.once('listening', () => {
-    dispatch(setStartDiscoveryTime('upnp'));
+    if (!isHeadless) dispatch(setStartDiscoveryTime('upnp'));
     console.log('[UPnP] LISTENING');
     socket.send('M-SEARCH * HTTP/1.1\r\nHOST:239.255.255.250:1900\r\nST: ssdp:all\r\nMX:2\r\nMAN:"ssdp:discover"\r\n\r\n', undefined, undefined, 1900, '239.255.255.250', (error) => {
       if (error) console.log('[UPnP] INITIAL ERROR ', error.message);
@@ -98,6 +96,7 @@ export default async function detectUPnPDevices(dispatch) {
   });
 
   const queue = [];
+  const discovered = [];
 
   socket.on('message', async (msg, { address }) => {
     if (!queue.includes(address)) {
@@ -108,10 +107,14 @@ export default async function detectUPnPDevices(dispatch) {
         try {
           const deviceInfo = await parseUPnPDevice(msg, address);
           // Dispatching an action for discovered
-          dispatch(deviceDiscovered(deviceInfo));
-          console.log('[UPnP] RESOLVED ', JSON.stringify(deviceInfo, null, 2));
+          if (isHeadless) {
+            discovered.push(deviceInfo);
+          } else {
+            dispatch(deviceDiscovered(deviceInfo));
+          }
+          console.log('[UPnP] RESOLVED', JSON.stringify(deviceInfo, null, 2));
         } catch (error) {
-          console.log('[UPnP] ERROR ', error.message);
+          console.log('[UPnP] ERROR', error.message);
         }
       }
     }
@@ -119,7 +122,12 @@ export default async function detectUPnPDevices(dispatch) {
 
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  dispatch(setEndDiscoveryTime('upnp'));
+  if (!isHeadless) dispatch(setEndDiscoveryTime('upnp'));
+
   socket.removeAllListeners();
   socket.close();
+
+  if (isHeadless) return { discovered, start, end: Date.now() };
+
+  return null;
 }

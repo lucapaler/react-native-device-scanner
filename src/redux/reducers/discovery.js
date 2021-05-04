@@ -9,22 +9,22 @@ export default function discoveryReducer(state = initialState.discovery, action 
     case START_DISCOVERY:
       return {
         ...state,
-        scan: true,
+        isScanning: true,
         last: {
           config: action.config,
-          execution: Date.now(),
+          start: Date.now(),
+          end: null,
           time: {
             start: {},
             end: {},
           },
           discovered: [],
           error: {},
-          termination: null,
         },
       };
 
     case SET_START_DISCOVERY_TIME:
-      if (!state.scan) {
+      if (!state.isScanning) {
         return state;
       }
 
@@ -43,7 +43,7 @@ export default function discoveryReducer(state = initialState.discovery, action 
       };
 
     case SET_END_DISCOVERY_TIME:
-      if (!state.scan) {
+      if (!state.isScanning) {
         return state;
       }
 
@@ -62,7 +62,7 @@ export default function discoveryReducer(state = initialState.discovery, action 
       };
 
     case DEVICE_DISCOVERED:
-      if (!state.scan) {
+      if (!state.isScanning) {
         return state;
       }
 
@@ -79,10 +79,9 @@ export default function discoveryReducer(state = initialState.discovery, action 
                   possibleMac: device.possibleMac || action.info.possibleMac,
                   manufacturer: device.manufacturer || action.info.manufacturer,
                   protocol: [...new Set([...device.protocol, ...action.info.protocol])],
-                  timeStamp: [...device.timeStamp, ...action.info.timeStamp],
+                  timestamp: [...device.timestamp, ...action.info.timestamp],
                   name: device.name || action.info.name,
                   model: device.model || action.info.model,
-                  discovery: [...device.discovery, ...action.info.discovery],
                   txt: {
                     ...device.txt,
                     ...action.info.txt,
@@ -97,7 +96,7 @@ export default function discoveryReducer(state = initialState.discovery, action 
       };
 
     case ERROR_DISCOVERY:
-      if (!state.scan) {
+      if (!state.isScanning) {
         return state;
       }
 
@@ -113,22 +112,22 @@ export default function discoveryReducer(state = initialState.discovery, action 
       };
 
     case END_DISCOVERY:
-      if (!state.scan) {
+      if (!state.isScanning) {
         return state;
       }
 
       return {
         ...state,
-        scan: false,
+        isScanning: false,
         last: {
           ...state.last,
-          termination: Date.now(),
+          end: Date.now(),
         },
         old: [
           ...state.old,
           {
             ...state.last,
-            termination: Date.now(),
+            end: Date.now(),
           },
         ],
       };
@@ -152,10 +151,10 @@ export default function discoveryReducer(state = initialState.discovery, action 
     case TERMINATE_SCAN:
       return {
         ...state,
-        scan: false,
+        isScanning: false,
         last: {
           ...state.last,
-          termination: Date.now(),
+          end: Date.now(),
         },
       };
 

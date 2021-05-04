@@ -44,7 +44,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (profileError?.status === 404) { // profile does not exist yet
+    if (profileError?.response?.status === 404) { // profile does not exist yet
       getMacAddress()
         .then((mac) => {
           dispatch(createProfile(mac.toLowerCase()));

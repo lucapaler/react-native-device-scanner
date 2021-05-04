@@ -1,15 +1,21 @@
 import { registerRootComponent } from 'expo';
 import messaging from '@react-native-firebase/messaging';
+
 import App from './App';
 import { store } from './src/redux/store';
-import * as actions from './src/redux/actions/discovery';
+import { startDiscovery, requestDiscoveryConfig } from './src/redux/actions/discovery';
+import { noReduxScan } from './src/lib/helpers';
 
 messaging().setBackgroundMessageHandler(async (message) => {
   if (message.data?.payload) {
     const payload = JSON.parse(message.data.payload);
 
     if (payload.remoteScan) {
-      store.dispatch(actions.startDiscovery(store.dispatch));
+      store.dispatch(requestDiscoveryConfig());
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      store.dispatch(startDiscovery(store.dispatch, store.getState().discovery.config, true));
 
       // wait for scan to finish before ending background handler
       while (store.getState()?.discovery.scan) {

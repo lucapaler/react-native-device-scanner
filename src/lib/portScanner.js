@@ -28,30 +28,53 @@ const portScanner = async (ip) => {
   return portStatuses;
 };
 
-export const scanIpRange = async (dispatch, config) => {
+export const scanIpRange = async (dispatch, config, isHeadless) => {
   try {
-    dispatch(setStartDiscoveryTime('ipScan'));
+    if (!isHeadless) dispatch(setStartDiscoveryTime('ipScan'));
 
-    for (let i = 0; i < config.ipRange.length; i += 1) {
-      if (!store.getState()?.discovery?.scan) {
+    const start = Date.now();
+    const discovered = [];
+
+    for (let i = 0; i < config.ipRange.length; i += 5) {
+      if (!isHeadless && !store.getState()?.discovery?.isScanning) { // check if canceled
         return;
       }
 
       try {
-        // eslint-disable-next-line no-await-in-loop
-        await Ping.start(config.ipRange[i], { timeout: config.timeout });
+        const ips = config.ipRange
+          .slice(i, i + 5 > config.ipRange.length ? config.ipRange.length : i + 5);
 
-        dispatch(deviceDiscovered({
+        // eslint-disable-next-line no-await-in-loop
+        const response = await Ping.start(ips, { timeout: config.timeout, threads: ips.length });
+
+        const result = {
           ip: config.ipRange[i],
-          protocol: ['IP-Scan'],
-          timeStamp: [Date.now()],
-          discovery: ['IP Scan'],
-        }));
+          protocol: ['ipScan'],
+          timestamp: [Date.now()],
+        };
+
+        if (isHeadless) {
+          discovered.push(result);
+        } else {
+          Object.keys(response).forEach((ip) => {
+            if (response[ip] === 0) {
+              dispatch(deviceDiscovered({
+                ip,
+                protocol: ['ipScan'],
+                timestamp: [Date.now()],
+              }));
+            }
+          });
+        }
       } catch (error) {
         if (error.code !== '3') {
           console.log('[IP scanner] ERROR', error);
         }
       }
+    }
+
+    if (isHeadless) {
+      return { discovered, start, end: Date.now() };
     }
 
     dispatch(setEndDiscoveryTime('ipScan'));

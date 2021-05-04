@@ -1,10 +1,11 @@
 import * as types from '../types/discovery';
 
-export function startDiscovery(dispatch, config) {
+export function startDiscovery(dispatch, config, isHeadless) {
   return {
     type: types.START_DISCOVERY,
     config,
     dispatch,
+    isHeadless,
   };
 }
 
