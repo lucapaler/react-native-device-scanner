@@ -1,5 +1,5 @@
 import Zeroconf from 'react-native-zeroconf';
-import { fetchMacVendor, ipv62mac } from './helpers';
+import { ipv62mac } from './helpers';
 import { store } from '../redux/store';
 import {
   deviceDiscovered, setStartDiscoveryTime, setEndDiscoveryTime,
@@ -15,7 +15,7 @@ const zeroconf = new Zeroconf();
  *
  * @link https://github.com/balthazar/react-native-zeroconf
  */
-export const zeroconfScan = async (dispatch, config, isHeadless) => {
+export const zeroconfScan = async (dispatch, config) => {
   const discovered = [];
 
   zeroconf.on('resolved', async (service) => {
@@ -35,53 +35,34 @@ export const zeroconfScan = async (dispatch, config, isHeadless) => {
       console.log('[zeroconf] mac', mac);
       console.log('[zeroconf] possible mac', possibleMac);
 
-      let manufacturer = '';
-
-      if (!service?.txt?.usb_MFG && !service?.txt?.vendor && (mac || possibleMac)) {
-        console.log('[zeroconf] fetching mac vendor');
-
-        if (mac) {
-          manufacturer = await fetchMacVendor(mac);
-        } else {
-          manufacturer = await fetchMacVendor(possibleMac);
-        }
-
-        if (!manufacturer && mac && possibleMac) {
-          manufacturer = await fetchMacVendor(possibleMac);
-        }
-      } else {
-        manufacturer = service?.txt?.usb_MFG || service?.txt?.vendor;
-      }
+      // TODO - find more manufacturer field names?
+      const manufacturer = service?.txt?.usb_MFG || service?.txt?.vendor;
 
       const result = {
         ip,
         protocol: ['zeroconf'],
         timestamp: [Date.now()],
-        txt: service.txt,
-        manufacturer,
       };
 
       if (service.name) result.name = service.name;
       if (service?.txt?.md) result.model = service.txt.md;
       if (mac) result.mac = mac;
       if (possibleMac) result.possibleMac = possibleMac;
+      if (manufacturer) result.manufacturer = manufacturer;
+      if (Object.keys(service.txt).length) result.txt = service.txt;
 
       discovered.push(result);
-
-      if (!isHeadless) dispatch(deviceDiscovered(result));
     }
   });
 
   const scanDevices = async () => {
-    if (!isHeadless) dispatch(setStartDiscoveryTime('zeroconf'));
-
-    const start = Date.now();
+    dispatch(setStartDiscoveryTime('zeroconf'));
 
     console.log('ZSERVICES TO SCAN', config.services);
 
     for (let i = 0; i < config?.services?.length; i += 1) {
       // check if task cancelled
-      if (!isHeadless && !store.getState()?.discovery?.isScanning) { // check if canceled
+      if (!store.getState()?.discovery?.isScanning) { // check if canceled
         return;
       }
 
@@ -97,25 +78,17 @@ export const zeroconfScan = async (dispatch, config, isHeadless) => {
 
     zeroconf.removeAllListeners();
 
-    if (isHeadless) {
-      return { discovered, start, end: Date.now() };
-    }
-
     dispatch(setEndDiscoveryTime('zeroconf'));
   };
 
   try {
-    if (isHeadless) {
-      return scanDevices();
-    }
-
     await scanDevices();
   } catch (error) {
     console.log('[zeroconf] ERROR', error.message);
   }
 };
 
-export const zservicesScan = async (isHeadless) => {
+export const zservicesScan = async () => {
   const servicesFound = [];
 
   zeroconf.on('found', async (service) => {
@@ -131,15 +104,7 @@ export const zservicesScan = async (isHeadless) => {
   try {
     zeroconf.scan('services', 'dns-sd._udp', 'local');
 
-    if (isHeadless) {
-      const waitTill = new Date(Date.now() + 500);
-
-      while (waitTill > new Date()) {
-        // do nothing
-      }
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     zeroconf.stop();
     zeroconf.removeAllListeners();

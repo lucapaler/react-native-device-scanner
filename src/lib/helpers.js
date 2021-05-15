@@ -1,3 +1,4 @@
+/* eslint-disable no-unsafe-finally */
 import { NetworkInfo } from 'react-native-network-info';
 import sip from 'shift8-ip-func';
 import ipaddr from 'ipaddr.js';
@@ -5,16 +6,55 @@ import NetInfo from '@react-native-community/netinfo';
 import auth from '@react-native-firebase/auth';
 import axios from 'axios';
 import wifi from 'react-native-android-wifi';
-import Ping from 'react-native-ping';
-import publicIP from 'react-native-public-ip';
+import perf from '@react-native-firebase/perf';
+import IP from 'react-native-ip-android';
+import ApiClient from '@logocomune/maclookup';
 
-import { zeroConfScan, zservicesScan } from './zeroconf';
-import detectUPnPDevices from './upnp';
-import { scanIpRange } from './portScanner';
+const apiClient = new ApiClient('01f54jg4zgg405b30xw2sbcy4201f54jhfh7yzzjsztx6c351j7nmrwe0t8ur1mk');
+apiClient.withLRUCache();
 
-const successCodes = [200, 201, 202, 204, 303];
-// const baseUrl = 'https://v2-0-39-dot-watutors-1.uc.r.appspot.com/v2/';
-const baseUrl = 'http://192.168.4.26:3001/v2/';
+const baseUrl = 'https://v2-1-0-dot-watutors-1.uc.r.appspot.com/v2/';
+// const baseUrl = 'http://192.168.4.26:3001/v2/';
+
+axios.interceptors.request.use(async (config) => {
+  try {
+    const httpMetric = perf().newHttpMetric(config.url, config.method.toUpperCase());
+    // eslint-disable-next-line no-param-reassign
+    config.metadata = { httpMetric };
+
+    await httpMetric.start();
+  } catch (error) {
+    console.log(error);
+  } finally {
+    return config;
+  }
+});
+
+axios.interceptors.response.use(
+  async (response) => {
+    try {
+      const { httpMetric } = response.config.metadata;
+
+      httpMetric.setHttpResponseCode(response.status);
+      httpMetric.setResponseContentType(response.headers['content-type']);
+
+      await httpMetric.stop();
+    } finally {
+      return response;
+    }
+  },
+  async (error) => {
+    try {
+      const { httpMetric } = error.config.metadata;
+
+      httpMetric.setHttpResponseCode(error.response.status);
+      httpMetric.setResponseContentType(error.response.headers['content-type']);
+      await httpMetric.stop();
+    } finally {
+      return Promise.reject(error);
+    }
+  },
+);
 
 export const apiFetch = async ({ method, endpoint, body = {} }) => {
   const config = {
@@ -28,38 +68,9 @@ export const apiFetch = async ({ method, endpoint, body = {} }) => {
 
   if (method !== 'GET') config.data = JSON.stringify(body);
 
-  const time = Date.now();
-
   console.log(`API ${method} initiated: ${baseUrl}${endpoint}: ${JSON.stringify(config, null, 2)}`);
 
   return axios(config);
-};
-
-const parseResponse = async (response, endpoint, time) => {
-  console.log('RAW RESPONSE', response);
-
-  const { status, headers } = response;
-
-  console.log(`${new Date().getTime() - time}ms ${endpoint} HTML response code: ${status}`);
-
-  if (!successCodes.includes(status)) {
-    throw new Error(`${status} - ${await response.text()}`);
-  }
-
-  const content = headers.get('content-type');
-  if (content.includes('json')) {
-    return response.json()
-      .then((data) => {
-        console.log(`Response content JSON: ${JSON.stringify(data, null, 2)}`);
-        return data;
-      });
-  }
-
-  return response.text()
-    .then((data) => {
-      console.log(`Response content not JSON, instead ${content}: ${data}`);
-      return data;
-    });
 };
 
 /**
@@ -71,16 +82,33 @@ const parseResponse = async (response, endpoint, time) => {
  *
  * @returns {string} MAC vendor, if found, else empty result.
  */
-export const fetchMacVendor = (mac) => fetch(`https://api.maclookup.app/v2/macs/${mac}`)
-  .then((response) => response.json())
-  .then(({ found, company }) => {
-    if (found) return company;
+// const fetchMacVendor = (mac) => fetch(`https://api.maclookup.app/v2/macs/${mac}`)
+//   .then((response) => response.json())
+//   .then(({ found, company }) => {
+//     if (found) return company;
 
-    return '';
-  })
-  .catch((error) => {
-    console.log('[zeroconf] ERROR', error);
-  });
+//     return '';
+//   })
+//   .catch((error) => {
+//     console.log('[fetch mac vendor] ERROR', error);
+//   });
+const fetchMacVendor = (mac) => new Promise((resolve) => {
+  apiClient.getMacInfo(
+    mac,
+    ({ macInfo }) => {
+      if (macInfo.found && macInfo.company) {
+        resolve(macInfo.company);
+      } else {
+        resolve('');
+      }
+    },
+    (error) => {
+      console.log('[fetch mac vendor] error', mac, error);
+
+      resolve('');
+    },
+  );
+});
 
 /**
  * Converts IPv6 link-local address to MAC address.
@@ -183,3 +211,51 @@ export const scanBSSIDs = () => new Promise((resolve, reject) => {
     },
   );
 });
+
+export const getMacAddresses = async (scan) => {
+  const macAddresses = await IP.getNeighbors();
+
+  return {
+    ...scan,
+    discovered: await Promise.all(scan.discovered.map(async (device) => {
+      if (macAddresses[device.ip]?.mac) {
+        const { mac } = macAddresses[device.ip];
+
+        return fetchMacVendor(mac)
+          .then((manufacturer) => {
+            const newDevice = { ...device, mac };
+
+            if (newDevice.possibleMac) {
+              delete newDevice.possibleMac;
+            }
+
+            if (manufacturer) newDevice.manufacturer = manufacturer;
+
+            console.log(device.ip, mac, manufacturer);
+
+            return newDevice;
+          });
+      }
+
+      let manufacturer = '';
+
+      if (device.mac) {
+        await fetchMacVendor(device.mac)
+          .then((result) => {
+            manufacturer = result;
+          });
+      } else if (device.possibleMac) {
+        await fetchMacVendor(device.possibleMac)
+          .then((result) => {
+            manufacturer = result;
+          });
+      }
+
+      const newDevice = { ...device };
+
+      if (manufacturer) newDevice.manufacturer = manufacturer;
+
+      return newDevice;
+    })),
+  };
+};

@@ -125,21 +125,7 @@ export default function Discovery({ navigation, route }) {
     }
   }, [status, finished]);
 
-  const scan = () => {
-    // const time = Date.now();
-
-    // await Ping.start(['192.168.4.1', '192.168.4.2', '192.168.4.3'], { timeout: 1000, threads: 3 })
-    //   .then((response) => {
-    //     console.log(response);
-    //   })
-    //   .catch((error) => {
-    //     console.log(error);
-    //   });
-
-    // console.log('FINISHED', Date.now() - time);
-
-    dispatch(startDiscovery(dispatch, Configuration));
-  };
+  const scan = () => dispatch(startDiscovery(dispatch, Configuration));
 
   const LoadingIndicator = (props) => isLoading && (
     <View {...props}>
@@ -161,7 +147,7 @@ export default function Discovery({ navigation, route }) {
         renderItem={({ item }) => (
           <DeviceInfoCard
             info={item}
-            basic={{ execution: scanInfo?.execution }}
+            basic={{ execution: scanInfo?.start }}
             navigation={navigation}
           />
         )}
@@ -169,10 +155,9 @@ export default function Discovery({ navigation, route }) {
           <Layout level="2">
             <View style={{ paddingVertical: '5%' }}>
               <Button
-                status={(status) ? 'danger' : 'primary'}
+                status={status ? 'danger' : 'primary'}
                 disabled={!isBrowsingLogs
                   && (!isDefaultConfig && !Object.keys(config).length && !status)}
-                // onPress={scan}
                 onPress={() => (isBrowsingLogs
                   ? setIsBrowsingLogs(false)
                   : status
@@ -181,11 +166,11 @@ export default function Discovery({ navigation, route }) {
                 style={{ width: '80%', alignSelf: 'center' }}
                 accessoryLeft={LoadingIndicator}
               >
-                {isBrowsingLogs ? 'NEW SCAN' : (status) ? 'TERMINATE' : 'INITIATE SCAN'}
+                {isBrowsingLogs && !status ? 'NEW SCAN' : status ? 'TERMINATE' : 'INITIATE SCAN'}
               </Button>
             </View>
             <View style={{ padding: '5%' }}>
-              <SearchBox value={isBrowsingLogs ? moment(scanInfo?.execution).format('MMMM Do, h:mm:ss a') : null} label="" screenName="Discovery" navigation={navigation} route={route} />
+              <SearchBox value={isBrowsingLogs ? moment(scanInfo?.start).format('MMMM Do, h:mm:ss a') : null} label="" screenName="Discovery" navigation={navigation} route={route} />
             </View>
             <Row>
               <Md end>

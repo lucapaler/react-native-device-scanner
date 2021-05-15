@@ -12,7 +12,7 @@ const ScanInfo = (props) => {
         <Column>
             <Row>
                 <Md><Text category="s1">Executed At:</Text></Md>
-                <Md><Text appearance="hint">{info?.execution? moment(info.execution).format('MMMM Do, h:mm:ss a'): '--'}</Text></Md>
+                <Md><Text appearance="hint">{info?.start? moment(info.start).format('MMMM Do, h:mm:ss a'): '--'}</Text></Md>
             </Row>
             <Row>
                 <Md><Text category="s1">Devices Found:</Text></Md>
@@ -20,7 +20,7 @@ const ScanInfo = (props) => {
             </Row>
             <Row>
                 <Md><Text category="s1">Terminated At:</Text></Md>
-                <Md><Text appearance="hint">{info?.termination? moment(info.termination).format('MMMM Do, h:mm:ss a'): '--'}</Text></Md>
+                <Md><Text appearance="hint">{info?.end? moment(info.end).format('MMMM Do, h:mm:ss a'): '--'}</Text></Md>
             </Row>
         </Column>
     </View>)

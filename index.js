@@ -3,24 +3,21 @@ import messaging from '@react-native-firebase/messaging';
 
 import App from './App';
 import { store } from './src/redux/store';
-import { startDiscovery, requestDiscoveryConfig } from './src/redux/actions/discovery';
-import { noReduxScan } from './src/lib/helpers';
+import { requestDiscoveryConfig } from './src/redux/actions/discovery';
 
 messaging().setBackgroundMessageHandler(async (message) => {
   if (message.data?.payload) {
     const payload = JSON.parse(message.data.payload);
 
     if (payload.remoteScan) {
-      store.dispatch(requestDiscoveryConfig());
-
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      store.dispatch(startDiscovery(store.dispatch, store.getState().discovery.config, true));
+      store.dispatch(requestDiscoveryConfig({}, store.dispatch, true));
 
       // wait for scan to finish before ending background handler
       while (store.getState()?.discovery.scan) {
         // eslint-disable-next-line no-await-in-loop
         await new Promise((resolve) => setTimeout(resolve, 5000));
+        // not sure why this timer works; it possibly isn't actually creating timeouts but the
+        // presence of the loop keeps the activity alive
       }
     }
   }

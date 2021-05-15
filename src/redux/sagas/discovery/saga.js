@@ -8,7 +8,9 @@ import { NetworkInfo } from 'react-native-network-info';
 import detectUPnPDevices from '../../../lib/upnp';
 import { zeroconfScan, zservicesScan } from '../../../lib/zeroconf';
 import { scanIpRange } from '../../../lib/portScanner';
-import { networkPromise, apiFetch, scanBSSIDs } from '../../../lib/helpers';
+import {
+  networkPromise, apiFetch, scanBSSIDs, getMacAddresses,
+} from '../../../lib/helpers';
 import * as actions from '../../actions/discovery';
 import * as types from '../../types/discovery';
 
@@ -34,7 +36,7 @@ function* upnpScan(action) {
 
 function* zconfScan(action) {
   try {
-    yield call(zeroconfScan, action.dispatch, action.config.zeroconf);
+    yield call(zeroconfScan, action.dispatch, action.config.zeroconf, action.isHeadless);
   } finally {
     if (yield cancelled()) {
       yield put(actions.setEndDiscoveryTime('zeroconf'));
@@ -44,11 +46,7 @@ function* zconfScan(action) {
 
 function* runTasks(action) {
   if (action.isHeadless) {
-    yield all([
-      call(upnpScan, action),
-      call(zconfScan, action),
-      call(ipScanner, action),
-    ]);
+    yield call(ipScanner, action);
   } else {
     const upnp = yield fork(upnpScan, action);
     const zconf = yield fork(zconfScan, action);
@@ -83,7 +81,9 @@ export function* startDiscoveryAsync(action) {
     yield put(actions.endDiscovery());
 
     const pid = yield select((state) => state.profile.pid);
-    const result = yield select((state) => state.discovery.last);
+    let result = yield select((state) => state.discovery.last);
+
+    result = yield getMacAddresses(result);
 
     yield call(saveScan, pid, result);
   } catch (error) {
@@ -95,7 +95,7 @@ export function* requestConfigAsync(action) {
   try {
     const { values } = action;
     const ipScan = yield call(networkPromise, values?.ipScan);
-    const zeroconfServices = yield call(zservicesScan);
+    const zeroconfServices = action.isHeadless ? [] : yield call(zservicesScan);
     const config = {
       bssids: yield scanBSSIDs(),
       gateway: yield NetworkInfo.getGatewayIPAddress(),
@@ -111,6 +111,12 @@ export function* requestConfigAsync(action) {
     };
 
     yield put(actions.setDiscoveryConfig(null, config));
+
+    // avoid manually setting a timer to wait for requestConfigAsync to finish by automatically
+    // starting a scan here.
+    if (action.isHeadless) {
+      yield put(actions.startDiscovery(action.dispatch, config, true));
+    }
   } catch (error) {
     console.log(error);
   }

@@ -1,5 +1,6 @@
 import TcpSocket from 'react-native-tcp-socket';
 import Ping from 'react-native-ping';
+import perf from '@react-native-firebase/perf';
 
 import { store } from '../redux/store';
 import {
@@ -30,22 +31,28 @@ const portScanner = async (ip) => {
 
 export const scanIpRange = async (dispatch, config, isHeadless) => {
   try {
+    const trace = await perf().startTrace('ipScan');
+
+    trace.putMetric('ips', config.ipRange.length);
+
     if (!isHeadless) dispatch(setStartDiscoveryTime('ipScan'));
 
     const start = Date.now();
     const discovered = [];
 
-    for (let i = 0; i < config.ipRange.length; i += 5) {
+    const threads = 20;
+
+    for (let i = 0; i < config.ipRange.length; i += threads) {
       if (!isHeadless && !store.getState()?.discovery?.isScanning) { // check if canceled
         return;
       }
 
       try {
         const ips = config.ipRange
-          .slice(i, i + 5 > config.ipRange.length ? config.ipRange.length : i + 5);
+          .slice(i, i + threads > config.ipRange.length ? config.ipRange.length : i + threads);
 
         // eslint-disable-next-line no-await-in-loop
-        const response = await Ping.start(ips, { timeout: config.timeout, threads: ips.length });
+        const response = await Ping.start(ips, { timeout: 1000, threads: ips.length });
 
         const result = {
           ip: config.ipRange[i],
@@ -72,6 +79,8 @@ export const scanIpRange = async (dispatch, config, isHeadless) => {
         }
       }
     }
+
+    await trace.stop();
 
     if (isHeadless) {
       return { discovered, start, end: Date.now() };

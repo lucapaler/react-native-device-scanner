@@ -11,57 +11,58 @@ export function startDiscovery(dispatch, config, isHeadless) {
 
 export function endDiscovery() {
   return {
-    type: types.END_DISCOVERY
-  }
+    type: types.END_DISCOVERY,
+  };
 }
 
 export function terminateScan() {
   return {
-    type: types.TERMINATE_SCAN
-  }
+    type: types.TERMINATE_SCAN,
+  };
 }
 
 export function errorDiscovery(protocol, error) {
   return {
     type: types.ERROR_DISCOVERY,
     protocol,
-    error
-  }
+    error,
+  };
 }
 
 export function deviceDiscovered(info) {
   return {
     type: types.DEVICE_DISCOVERED,
-    info
-  }
+    info,
+  };
 }
 
 export function setStartDiscoveryTime(protocol) {
   return {
     type: types.SET_START_DISCOVERY_TIME,
-    protocol
-  }
+    protocol,
+  };
 }
-
 
 export function setEndDiscoveryTime(protocol) {
   return {
     type: types.SET_END_DISCOVERY_TIME,
-    protocol
-  }
+    protocol,
+  };
 }
 
 export function setDiscoveryConfig(protocol, config) {
   return {
     type: types.SET_DISCOVERY_CONFIG,
     protocol,
-    config
-  }
+    config,
+  };
 }
 
-export function requestDiscoveryConfig(values) {
+export function requestDiscoveryConfig(values, dispatch, isHeadless) {
   return {
     type: types.REQUEST_DISCOVERY_CONFIG,
-    values
-  }
+    values,
+    dispatch,
+    isHeadless,
+  };
 }
