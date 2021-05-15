@@ -1,4 +1,6 @@
 apply plugin: "com.android.application"
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.firebase-perf'
 
 import com.android.build.OutputFile
 
@@ -154,6 +156,13 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+
+        // release {
+        //     storeFile file('your_key_name.keystore')
+        //     storePassword System.console().readLine("\nKeystore password:")
+        //     keyAlias System.console().readLine("\nAlias: ")
+        //     keyPassword System.console().readLine("\Alias password: ")
+        // }
     }
     buildTypes {
         debug {
@@ -163,6 +172,7 @@ android {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
+            // signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

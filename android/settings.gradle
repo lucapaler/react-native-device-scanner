@@ -1,4 +1,6 @@
 rootProject.name = 'testingscanner'
+include ':get-subnet-mask'
+project(':get-subnet-mask').projectDir = new File(rootProject.projectDir, '../node_modules/get-subnet-mask/android')
 
 apply from: '../node_modules/react-native-unimodules/gradle.groovy'
 includeUnimodulesProjects()

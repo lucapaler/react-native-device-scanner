@@ -45,6 +45,7 @@ public class MainApplication extends Application implements ReactApplication {
       packages.add(new ModuleRegistryAdapter(mModuleRegistryProvider));
       return packages;
     }
+    
 
     @Override
     protected String getJSMainModuleName() {

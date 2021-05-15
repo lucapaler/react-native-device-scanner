@@ -12,22 +12,6 @@ npm-debug.log
 yarn-error.log
 yarn.lock
 
-# Ruby
-.direnv
-
-# Emacs
-*~
-
-# Vim
-.*.swp
-.*.swo
-.*.swn
-.*.swm
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-
 # Xcode
 *.pbxuser
 !default.pbxuser
@@ -38,16 +22,7 @@ xcuserdata
 # Android Studio
 *.iml
 .gradle
-.idea/libraries
-.idea/workspace.xml
-.idea/gradle.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
-
-# Eclipse
-.project
-.settings
+.idea
 
 # VSCode
 .history/
@@ -61,9 +36,7 @@ xcuserdata
 /android/expoview/libs/ReactAndroid-temp
 /android/versioned-react-native/ReactAndroid
 ReactAndroid-temp.aar
-
-# Tools
-jarjar-rules.txt
+/android/app/bin
 
 # Dynamic Macros
 /ios/Exponent/Supporting/EXBuildConstants.plist.bak

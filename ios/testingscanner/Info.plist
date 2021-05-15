@@ -53,6 +53,7 @@
 		<string>_companion-link._tcp.</string>
 		<string>_ipp._tcp.</string>
 		<string>_ssh._tcp.</string>
+		<string>_services._dns-sd._udp.</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Scan for nearby devices</string>
