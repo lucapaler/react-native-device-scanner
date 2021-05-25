@@ -66,3 +66,16 @@ export function requestDiscoveryConfig(values, dispatch, isHeadless) {
     isHeadless,
   };
 }
+
+export function addLog(log) {
+  return {
+    type: types.ADD_LOG,
+    log,
+  };
+}
+
+export function setIsReady() {
+  return {
+    type: types.SET_IS_READY,
+  };
+}

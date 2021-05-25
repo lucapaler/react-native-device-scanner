@@ -5,6 +5,13 @@ import App from './App';
 import { store } from './src/redux/store';
 import { requestDiscoveryConfig } from './src/redux/actions/discovery';
 
+console.stdlog = console.log.bind(console);
+console.logs = [];
+console.log = (...msg) => {
+  console.logs.push(...msg);
+  console.stdlog(...msg);
+};
+
 messaging().setBackgroundMessageHandler(async (message) => {
   if (message.data?.payload) {
     const payload = JSON.parse(message.data.payload);

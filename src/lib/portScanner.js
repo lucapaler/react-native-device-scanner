@@ -4,7 +4,7 @@ import perf from '@react-native-firebase/perf';
 
 import { store } from '../redux/store';
 import {
-  setStartDiscoveryTime, deviceDiscovered, setEndDiscoveryTime,
+  setStartDiscoveryTime, deviceDiscovered, setEndDiscoveryTime, addLog,
 } from '../redux/actions/discovery';
 
 const portScanner = async (ip) => {
@@ -51,6 +51,8 @@ export const scanIpRange = async (dispatch, config, isHeadless) => {
         const ips = config.ipRange
           .slice(i, i + threads > config.ipRange.length ? config.ipRange.length : i + threads);
 
+        dispatch(addLog(`SCANNING ${ips[0]}-${ips[ips.length - 1]}`));
+
         // eslint-disable-next-line no-await-in-loop
         const response = await Ping.start(ips, { timeout: 1000, threads: ips.length });
 
@@ -65,11 +67,14 @@ export const scanIpRange = async (dispatch, config, isHeadless) => {
         } else {
           Object.keys(response).forEach((ip) => {
             if (response[ip] === 0) {
+              dispatch(addLog(`${ip} RESPONDED`));
               dispatch(deviceDiscovered({
                 ip,
                 protocol: ['ipScan'],
                 timestamp: [Date.now()],
               }));
+            } else {
+              dispatch(addLog(`${ip} FAILED`));
             }
           });
         }

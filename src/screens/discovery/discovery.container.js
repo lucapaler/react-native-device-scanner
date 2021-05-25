@@ -7,6 +7,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
 import { PropTypes } from 'prop-types';
 
+import * as Location from 'expo-location';
+
 import { Row, Md } from '../shared/components/Layout';
 import { DeviceInfoCard } from './components/DeviceInfo';
 import {
@@ -36,6 +38,7 @@ export default function Discovery({ navigation, route }) {
   const [scanInfo, setScanInfo] = useState(lastScan);
   const status = useSelector((state) => state.discovery.isScanning);
   const finished = useSelector(({ discovery }) => discovery.last.time.end);
+  const isReady = useSelector(({ discovery }) => discovery.isReady);
   const [isLoading, load] = useState(false);
   const [active, setActive] = useState([]);
   const [config, setConfig] = useState({});
@@ -67,7 +70,7 @@ export default function Discovery({ navigation, route }) {
   useEffect(() => {
     if (prevIsDefaultConfig) {
       if (isDefaultConfig && !prevIsDefaultConfig) {
-        fetchConfig();
+        dispatch(requestDiscoveryConfig());
       }
     }
 
@@ -101,7 +104,13 @@ export default function Discovery({ navigation, route }) {
       setIsDefaultConfig(true);
       setScanInfo({});
       setActive([]);
-      fetchConfig();
+      Location.requestForegroundPermissionsAsync()
+        .then(() => {
+          Location.requestBackgroundPermissionsAsync()
+            .finally(async () => {
+              dispatch(requestDiscoveryConfig());
+            });
+        });
     }
   }, [isBrowsingLogs]);
 
@@ -127,15 +136,11 @@ export default function Discovery({ navigation, route }) {
 
   const scan = () => dispatch(startDiscovery(dispatch, Configuration));
 
-  const LoadingIndicator = (props) => isLoading && (
+  const LoadingIndicator = (props) => (isLoading || (!isBrowsingLogs && !status && !isReady)) && (
     <View {...props}>
       <Spinner status="basic" size="small" />
     </View>
   );
-
-  async function fetchConfig() {
-    dispatch(requestDiscoveryConfig());
-  }
 
   return (
     <Layout level="2">
@@ -156,8 +161,9 @@ export default function Discovery({ navigation, route }) {
             <View style={{ paddingVertical: '5%' }}>
               <Button
                 status={status ? 'danger' : 'primary'}
-                disabled={!isBrowsingLogs
-                  && (!isDefaultConfig && !Object.keys(config).length && !status)}
+                disabled={(!isBrowsingLogs
+                  && (!isDefaultConfig && !Object.keys(config).length && !status))
+                  || (!isBrowsingLogs && !status && !isReady)}
                 onPress={() => (isBrowsingLogs
                   ? setIsBrowsingLogs(false)
                   : status
@@ -166,7 +172,13 @@ export default function Discovery({ navigation, route }) {
                 style={{ width: '80%', alignSelf: 'center' }}
                 accessoryLeft={LoadingIndicator}
               >
-                {isBrowsingLogs && !status ? 'NEW SCAN' : status ? 'TERMINATE' : 'INITIATE SCAN'}
+                {isBrowsingLogs && !status
+                  ? 'NEW SCAN'
+                  : status
+                    ? 'TERMINATE'
+                    : isReady
+                      ? 'INITIATE SCAN'
+                      : ''}
               </Button>
             </View>
             <View style={{ padding: '5%' }}>

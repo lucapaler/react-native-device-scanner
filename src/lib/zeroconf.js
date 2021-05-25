@@ -91,7 +91,7 @@ export const zeroconfScan = async (dispatch, config) => {
 export const zservicesScan = async () => {
   const servicesFound = [];
 
-  zeroconf.on('found', async (service) => {
+  zeroconf.on('found', (service) => {
     // scannable services do not contain addresses, only discovered devices do
     if (!service.addresses) {
       console.log(
@@ -102,9 +102,13 @@ export const zservicesScan = async () => {
   });
 
   try {
+    if (zeroconf.listenerCount('found') === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     zeroconf.scan('services', 'dns-sd._udp', 'local');
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     zeroconf.stop();
     zeroconf.removeAllListeners();

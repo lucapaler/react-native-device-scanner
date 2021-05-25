@@ -112,6 +112,8 @@ export function* requestConfigAsync(action) {
 
     yield put(actions.setDiscoveryConfig(null, config));
 
+    yield put(actions.setIsReady());
+
     // avoid manually setting a timer to wait for requestConfigAsync to finish by automatically
     // starting a scan here.
     if (action.isHeadless) {

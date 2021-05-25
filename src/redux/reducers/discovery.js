@@ -1,6 +1,6 @@
 import {
   START_DISCOVERY, SET_START_DISCOVERY_TIME, SET_END_DISCOVERY_TIME, DEVICE_DISCOVERED,
-  ERROR_DISCOVERY, END_DISCOVERY, SET_DISCOVERY_CONFIG, TERMINATE_SCAN,
+  ERROR_DISCOVERY, END_DISCOVERY, SET_DISCOVERY_CONFIG, TERMINATE_SCAN, ADD_LOG, SET_IS_READY,
 } from '../types/discovery';
 import initialState from '../store/initialState';
 
@@ -152,10 +152,26 @@ export default function discoveryReducer(state = initialState.discovery, action 
       return {
         ...state,
         isScanning: false,
+        isReady: false,
         last: {
           ...state.last,
           end: Date.now(),
         },
+      };
+
+    case ADD_LOG:
+      return {
+        ...state,
+        logs: [
+          ...state.logs,
+          action.log,
+        ],
+      };
+
+    case SET_IS_READY:
+      return {
+        ...state,
+        isReady: true,
       };
 
     default:

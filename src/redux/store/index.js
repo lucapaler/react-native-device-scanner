@@ -10,6 +10,7 @@ import logger from './logger';
 const rootPersistConfig = {
   key: 'root',
   storage: AsyncStorage,
+  blacklist: ['profile', 'discovery'],
 };
 
 const profilePersistConfig = {
@@ -21,7 +22,7 @@ const profilePersistConfig = {
 const discoveryPersistConfig = {
   key: 'discovery',
   storage: AsyncStorage,
-  blacklist: ['scan'], // "loading" key basically
+  blacklist: ['isScanning', 'logs', 'isReady'],
 };
 
 const sagaMiddleware = createSagaMiddleware();

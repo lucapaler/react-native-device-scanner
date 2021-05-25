@@ -158,30 +158,53 @@ export const ipv62mac = (ipv6) => {
   return macParts.join(':');
 };
 
+const getIpRange = (subnet, localIp) => {
+  const subconv = ipaddr.IPv4.parse(subnet).prefixLengthFromSubnetMask();
+  console.log('SUBCONV', subconv);
+  const firstHost = ipaddr.IPv4.networkAddressFromCIDR(`${localIp}/${subconv}`);
+  console.log('FIRSTHOST', firstHost);
+  const lastHost = ipaddr.IPv4.broadcastAddressFromCIDR(`${localIp}/${subconv}`);
+  console.log('LASTHOST', lastHost);
+
+  const firstHostHex = sip.convertIPtoHex(firstHost);
+  const lastHostHex = sip.convertIPtoHex(lastHost);
+  const ipRange = sip.getIPRange(firstHostHex, lastHostHex);
+
+  return {
+    subconv,
+    firstHost: firstHost.octets?.join('.') ?? [],
+    lastHost: lastHost.octets?.join('.') ?? [],
+    firstHostHex,
+    lastHostHex,
+    ipRange: ipRange.length ? ipRange.slice(1) : ipRange,
+  };
+};
+
 /**
  * For fetching network information
  * @returns {Object} of network Info
  */
 export const networkPromise = async (values) => {
   try {
-    const netInfo = await NetInfo.fetch(); // seems to fetch incorrect subnet
+    const netInfo = await NetInfo.fetch(); // seems to fetch incorrect subnet on some networks
     console.log('NET_INFO', netInfo);
     const localIp = values?.localIp || netInfo.details.ipAddress;
     console.log('IP', localIp);
-    const localNetmask = values?.localNetmask || await NetworkInfo.getSubnet();
+    let localNetmask = values?.localNetmask || await NetworkInfo.getSubnet(); // same here though
     console.log('NETMASK', localNetmask);
-    const subconv = ipaddr.IPv4.parse(localNetmask).prefixLengthFromSubnetMask();
-    console.log('SUBCONV', subconv);
-    const firstHost = ipaddr.IPv4.networkAddressFromCIDR(`${localIp}/${subconv}`);
-    console.log('FIRSTHOST', firstHost);
-    const lastHost = ipaddr.IPv4.broadcastAddressFromCIDR(`${localIp}/${subconv}`);
-    console.log('LASTHOST', lastHost);
-    const firstHostHex = sip.convertIPtoHex(firstHost);
-    console.log('FIRSTHEX', firstHostHex);
-    const lastHostHex = sip.convertIPtoHex(lastHost);
-    console.log('LASTHEX', lastHostHex);
-    const ipRange = sip.getIPRange(firstHostHex, lastHostHex);
-    const newIpRange = ipRange.length ? ipRange.slice(1) : ipRange;
+
+    let {
+      subconv, firstHost, lastHost, firstHostHex, lastHostHex, ipRange,
+    } = getIpRange(localNetmask, localIp);
+
+    if (ipRange.length < 254) {
+      localNetmask = netInfo.details.subnet;
+      console.log('SUBNET', localNetmask);
+
+      ({
+        subconv, firstHost, lastHost, firstHostHex, lastHostHex, ipRange,
+      } = getIpRange(localNetmask, localIp));
+    }
 
     return {
       localIp,
@@ -191,7 +214,7 @@ export const networkPromise = async (values) => {
       lastHost,
       firstHostHex,
       lastHostHex,
-      ipRange: newIpRange,
+      ipRange,
     };
   } catch (error) {
     console.log('[network details] ERROR', error);

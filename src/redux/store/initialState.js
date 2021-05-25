@@ -6,7 +6,7 @@ export default {
   },
   discovery: {
     discovered: false,
-    scan: false,
+    isScanning: false,
     old: [],
     last: {
       time: {
@@ -14,5 +14,7 @@ export default {
       },
     },
     config: {},
+    logs: [],
+    isReady: false,
   },
 };
