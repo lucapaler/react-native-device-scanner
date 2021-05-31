@@ -20,7 +20,7 @@ messaging().setBackgroundMessageHandler(async (message) => {
       store.dispatch(requestDiscoveryConfig({}, store.dispatch, true));
 
       // wait for scan to finish before ending background handler
-      while (store.getState()?.discovery.scan) {
+      while (store.getState()?.discovery.isScanning) {
         // eslint-disable-next-line no-await-in-loop
         await new Promise((resolve) => setTimeout(resolve, 5000));
         // not sure why this timer works; it possibly isn't actually creating timeouts but the

@@ -1,5 +1,5 @@
 import {
-  call, put, fork, take, cancelled, cancel, select, all,
+  call, put, fork, take, cancelled, cancel, select,
 } from 'redux-saga/effects';
 
 import publicIP from 'react-native-public-ip';
@@ -81,9 +81,9 @@ export function* startDiscoveryAsync(action) {
     yield put(actions.endDiscovery());
 
     const pid = yield select((state) => state.profile.pid);
-    let result = yield select((state) => state.discovery.last);
+    const result = yield select((state) => state.discovery.last);
 
-    result = yield getMacAddresses(result);
+    // result = yield getMacAddresses(result);
 
     yield call(saveScan, pid, result);
   } catch (error) {
@@ -101,7 +101,7 @@ export function* requestConfigAsync(action) {
       gateway: yield NetworkInfo.getGatewayIPAddress(),
       ipScan: {
         ...ipScan,
-        timeout: values?.ipScan?.timeout || 100,
+        timeout: values?.ipScan?.timeout || 1000,
       },
       zeroconf: {
         services: Object.keys(values?.zeroConf || {})?.includes('services')

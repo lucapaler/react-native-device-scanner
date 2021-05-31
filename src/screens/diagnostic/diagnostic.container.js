@@ -42,7 +42,7 @@ export default function Login({ navigation }) {
     <Layout level="2">
       <ScrollView>
         {/* <Button onPress={handleLogin}>LogOut</Button> */}
-        <Text>Version 0.0.2</Text>
+        <Text>Version 0.0.3</Text>
         {logs.map((msg) => (
           <Text>
             {String(msg)}

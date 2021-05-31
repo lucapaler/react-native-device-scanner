@@ -6,6 +6,7 @@ import { store } from '../redux/store';
 import {
   setStartDiscoveryTime, deviceDiscovered, setEndDiscoveryTime, addLog,
 } from '../redux/actions/discovery';
+import { getMacAddresses } from './helpers';
 
 const portScanner = async (ip) => {
   const portStatuses = [];
@@ -42,6 +43,8 @@ export const scanIpRange = async (dispatch, config, isHeadless) => {
 
     const threads = 20;
 
+    let queue = [];
+
     for (let i = 0; i < config.ipRange.length; i += threads) {
       if (!isHeadless && !store.getState()?.discovery?.isScanning) { // check if canceled
         return;
@@ -51,32 +54,50 @@ export const scanIpRange = async (dispatch, config, isHeadless) => {
         const ips = config.ipRange
           .slice(i, i + threads > config.ipRange.length ? config.ipRange.length : i + threads);
 
-        dispatch(addLog(`SCANNING ${ips[0]}-${ips[ips.length - 1]}`));
+        // dispatch(addLog(`SCANNING ${ips[0]}-${ips[ips.length - 1]}`));
 
         // eslint-disable-next-line no-await-in-loop
-        const response = await Ping.start(ips, { timeout: 1000, threads: ips.length });
-
-        const result = {
-          ip: config.ipRange[i],
-          protocol: ['ipScan'],
-          timestamp: [Date.now()],
-        };
+        const response = await Ping.start(ips, { timeout: config.timeout, threads: ips.length });
 
         if (isHeadless) {
-          discovered.push(result);
+          Object.keys(response).forEach((ip) => {
+            if (response[ip] === 0) {
+              // dispatch(addLog(`${ip} RESPONDED`));
+              discovered.push({
+                ip,
+                protocol: ['ipScan'],
+                timestamp: [Date.now()],
+              });
+            }
+          });
         } else {
           Object.keys(response).forEach((ip) => {
             if (response[ip] === 0) {
-              dispatch(addLog(`${ip} RESPONDED`));
+              queue.push(ip);
+              // dispatch(addLog(`${ip} RESPONDED`));
               dispatch(deviceDiscovered({
                 ip,
                 protocol: ['ipScan'],
                 timestamp: [Date.now()],
               }));
-            } else {
-              dispatch(addLog(`${ip} FAILED`));
             }
+            // else {
+            //   dispatch(addLog(`${ip} FAILED`));
+            // }
           });
+        }
+
+        // every 80 IPs, fetch MAC addresses
+        // ARP cache overwrites itself every 100 or so failed IPs
+        if (i > 0 && i % (threads * 4) === 0) {
+          console.log('QUEUE', queue);
+
+          if (queue.length > 0) {
+            getMacAddresses(store.getState().discovery.last.discovered
+              .filter(({ ip }) => queue.includes(ip)), dispatch);
+          }
+
+          queue = [];
         }
       } catch (error) {
         if (error.code !== '3') {

@@ -9,6 +9,7 @@ import wifi from 'react-native-android-wifi';
 import perf from '@react-native-firebase/perf';
 import IP from 'react-native-ip-android';
 import ApiClient from '@logocomune/maclookup';
+import { deviceDiscovered } from '../redux/actions/discovery';
 
 const apiClient = new ApiClient('01f54jg4zgg405b30xw2sbcy4201f54jhfh7yzzjsztx6c351j7nmrwe0t8ur1mk');
 apiClient.withLRUCache();
@@ -82,16 +83,6 @@ export const apiFetch = async ({ method, endpoint, body = {} }) => {
  *
  * @returns {string} MAC vendor, if found, else empty result.
  */
-// const fetchMacVendor = (mac) => fetch(`https://api.maclookup.app/v2/macs/${mac}`)
-//   .then((response) => response.json())
-//   .then(({ found, company }) => {
-//     if (found) return company;
-
-//     return '';
-//   })
-//   .catch((error) => {
-//     console.log('[fetch mac vendor] ERROR', error);
-//   });
 const fetchMacVendor = (mac) => new Promise((resolve) => {
   apiClient.getMacInfo(
     mac,
@@ -235,50 +226,51 @@ export const scanBSSIDs = () => new Promise((resolve, reject) => {
   );
 });
 
-export const getMacAddresses = async (scan) => {
+export const getMacAddresses = async (discovered, dispatch) => {
   const macAddresses = await IP.getNeighbors();
 
-  return {
-    ...scan,
-    discovered: await Promise.all(scan.discovered.map(async (device) => {
-      if (macAddresses[device.ip]?.mac) {
-        const { mac } = macAddresses[device.ip];
+  const devices = await Promise.all(discovered.map(async (device) => {
+    if (macAddresses[device.ip]?.mac) {
+      const { mac } = macAddresses[device.ip];
 
-        return fetchMacVendor(mac)
-          .then((manufacturer) => {
-            const newDevice = { ...device, mac };
+      return fetchMacVendor(mac)
+        .then((manufacturer) => {
+          const newDevice = { ...device, mac };
 
-            if (newDevice.possibleMac) {
-              delete newDevice.possibleMac;
-            }
+          if (newDevice.possibleMac) {
+            delete newDevice.possibleMac;
+          }
 
-            if (manufacturer) newDevice.manufacturer = manufacturer;
+          if (manufacturer) newDevice.manufacturer = manufacturer;
 
-            console.log(device.ip, mac, manufacturer);
+          console.log(device.ip, mac, manufacturer);
 
-            return newDevice;
-          });
-      }
+          return newDevice;
+        });
+    }
 
-      let manufacturer = '';
+    let manufacturer = '';
 
-      if (device.mac) {
-        await fetchMacVendor(device.mac)
-          .then((result) => {
-            manufacturer = result;
-          });
-      } else if (device.possibleMac) {
-        await fetchMacVendor(device.possibleMac)
-          .then((result) => {
-            manufacturer = result;
-          });
-      }
+    if (device.mac) {
+      await fetchMacVendor(device.mac)
+        .then((result) => {
+          manufacturer = result;
+        });
+    } else if (device.possibleMac) {
+      await fetchMacVendor(device.possibleMac)
+        .then((result) => {
+          manufacturer = result;
+        });
+    }
 
-      const newDevice = { ...device };
+    const newDevice = { ...device };
 
-      if (manufacturer) newDevice.manufacturer = manufacturer;
+    if (manufacturer) newDevice.manufacturer = manufacturer;
 
-      return newDevice;
-    })),
-  };
+    return newDevice;
+  }));
+
+  devices.forEach((device) => {
+    dispatch(deviceDiscovered(device));
+  });
 };

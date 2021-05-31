@@ -80,7 +80,6 @@ export default function App() {
         ? <MainBottomTab />
         : (
           <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Login" component={screens.General.Login} />
           </Stack.Navigator>
         )}
     </NavigationContainer>

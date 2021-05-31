@@ -45,7 +45,7 @@ export default function DeviceDetails({ navigation, route }) {
                   <Md>
                     <Text category="s1" appearance="hint">{item}</Text>
                   </Md>
-                  <Md><Text appearance="hint">{`${moment.duration(moment(deviceInfo?.timeStamp[idx]).diff(moment(basicInfo?.execution))).asMilliseconds()} ms`}</Text></Md>
+                  <Md><Text appearance="hint">{`${moment.duration(moment(deviceInfo?.timestamp[idx]).diff(moment(basicInfo?.execution))).asMilliseconds()} ms`}</Text></Md>
                 </Row>
               ))
             }
@@ -60,7 +60,7 @@ export default function DeviceDetails({ navigation, route }) {
               </Md>
             </Row>
             {Object.keys(deviceInfo)?.map((info, idx1) => {
-              if (!['ip', 'protocol', 'timeStamp'].includes(info)) {
+              if (!['ip', 'protocol', 'timestamp'].includes(info)) {
                 return (
                   <Row key={idx1} style={{ marginBottom: '1%' }}>
                     <Md>
