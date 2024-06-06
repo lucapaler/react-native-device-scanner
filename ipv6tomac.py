@@ -34,8 +34,3 @@ def ipv62mac(ipv6):
     del macParts[3]
 
     return ":".join(macParts)
-
-# print(mac2ipv6('80:4a:14:69:b1:5d'))
-print(ipv62mac('fe80::417:2066:cc4f:eff9'))
-# 1e:4c:54:a4:5a:77
-# 80:4a:14:69:b1:5d
